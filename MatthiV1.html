@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUM Kursübersicht</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-dark: #0f172a;
+            --primary-darker: #020617;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary-darker) 0%, #1e293b 50%, var(--primary-dark) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            will-change: transform;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: skewX(-25deg);
+            animation: shimmer 25s infinite;
+            will-change: transform;
+        }
+
+        @keyframes shimmer {
+            0%, 85% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-text { flex: 1; }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .nav-tabs { display: flex; gap: 10px; }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        /* My Study Section */
+        .my-study-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .my-study-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .my-study-title {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .my-study-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .my-study-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .my-study-stat-value {
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* Unassigned courses pool */
+        .unassigned-pool {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(139, 92, 246, 0.06) 100%);
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+            min-height: 80px;
+            transition: all 0.2s;
+        }
+
+        .unassigned-pool.drag-over {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.12);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .unassigned-pool-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .unassigned-pool-hint {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .my-study-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        /* Course card in Mein Studium - FIXED overlap */
+        .my-study-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 16px 16px 16px;
+            transition: all 0.2s;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .my-study-card:active { cursor: grabbing; }
+
+        .my-study-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .my-study-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .my-study-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .my-study-card-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.3;
+            flex: 1;
+            min-width: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .my-study-card-remove {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .my-study-card-remove:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.05);
+        }
+
+        .my-study-card-meta {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .my-study-card-meta-item {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 7px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
+        .my-study-card-fachbereich {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        .my-study-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .my-study-empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Semester Sections */
+        .semesters-container {
+            margin-top: 30px;
+        }
+
+        .semesters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .semesters-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .add-semester-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .add-semester-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .semester-block {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 120px;
+            transition: all 0.2s;
+        }
+
+        .semester-block.drag-over {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+        }
+
+        .semester-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .semester-block-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .semester-block-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .semester-block-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .semester-block-stat-value {
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .semester-block-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .semester-delete-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .semester-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .semester-courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+            min-height: 60px;
+        }
+
+        .semester-drop-hint {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border: 2px dashed rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+        }
+
+        /* Top Courses */
+        .top-courses {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transform: translateZ(0);
+        }
+
+        .top-courses-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .top-courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .top-course-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        .top-course-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .top-course-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .top-course-card:hover::before { opacity: 1; }
+
+        .top-course-rank {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .top-course-rank.gold {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #1a1a1a;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .top-course-rank.silver {
+            background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+            color: #1a1a1a;
+        }
+
+        .top-course-rank.bronze {
+            background: linear-gradient(135deg, #fdba74 0%, #ea580c 100%);
+            color: white;
+        }
+
+        .top-course-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            margin-top: 10px;
+        }
+
+        .top-course-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .top-course-meta-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .top-course-rating {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 15px;
+        }
+
+        .top-course-contributors {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .contributor-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin: 2px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .search-bar input::placeholder { color: var(--text-muted); }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .filter-select {
+            padding: 10px 35px 10px 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+            min-width: 160px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .filter-select option {
+            background: var(--primary-dark);
+            color: var(--text-primary);
+        }
+
+        select.filter-select { background-color: var(--primary-dark); }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.4s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-primary:hover::before { left: 100%; }
+
+        /* Table */
+        .table-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        thead { background: rgba(15, 23, 42, 0.8); }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        tbody tr {
+            transition: background-color 0.15s ease;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
+        tbody tr:last-child { border-bottom: none; }
+
+        td {
+            padding: 18px 20px;
+            font-size: 14px;
+            color: var(--text-primary);
+            vertical-align: top;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        .course-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .created-by {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .badge-leicht {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-mittel {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-schwer {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .rating {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .icon-btn {
+            padding: 8px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .icon-btn.edit:hover {
+            color: var(--accent-blue);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .icon-btn.delete:hover {
+            color: var(--danger);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .icon-btn.add-to-study {
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .icon-btn.add-to-study:hover {
+            background: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .icon-btn.added {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            pointer-events: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 35px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-select option {
+            background: var(--primary-dark);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary {
+            padding: 12px 24px;
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: var(--text-muted);
+        }
+
+        /* Guide Section */
+        .guide-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 35px;
+            margin-top: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .guide-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .guide-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 25px 0 15px 0;
+        }
+
+        .guide-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .guide-column h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .guide-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 14px;
+        }
+
+        .guide-item:last-child { border-bottom: none; }
+
+        .guide-item strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .guide-item span {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .usage-steps { margin-top: 20px; }
+
+        .usage-step {
+            display: flex;
+            gap: 15px;
+            padding: 15px 0;
+            align-items: start;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .step-text {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .step-text strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Semester name modal */
+        .semester-name-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .semester-name-modal.active {
+            display: flex;
+        }
+
+        .semester-name-content {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .semester-name-content h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .semester-name-content input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .semester-name-content input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .semester-name-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--primary-darker); }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        @media (max-width: 1200px) {
+            .guide-columns { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 28px; }
+            .subtitle { font-size: 14px; }
+            .header { padding: 20px 0; margin-bottom: 20px; }
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .nav-tabs { width: 100%; overflow-x: auto; }
+            .container { padding: 15px 10px; }
+
+            .top-courses, .my-study-section, .guide-section {
+                border-radius: 12px; padding: 20px; margin-bottom: 20px;
+            }
+
+            .stats-grid { gap: 12px; margin-bottom: 20px; grid-template-columns: repeat(2, 1fr); }
+            .stat-card { padding: 18px; }
+            .stat-value { font-size: 28px; }
+
+            .table-container { overflow-x: auto; border-radius: 12px; }
+            table { min-width: 1400px; }
+
+            .controls { flex-direction: column; align-items: stretch; gap: 12px; }
+            .search-bar { width: 100%; min-width: unset; }
+            .filter-group { width: 100%; gap: 8px; }
+            .filter-btn { padding: 8px 12px; font-size: 13px; flex: 1; }
+            .filter-select { width: 100%; min-width: unset; }
+            .btn-primary { width: 100%; padding: 14px 24px; }
+
+            .form-grid { grid-template-columns: 1fr; }
+            .top-courses-grid { grid-template-columns: 1fr; gap: 15px; }
+            .top-course-name { font-size: 18px; }
+
+            .modal-content { padding: 25px 20px; margin: 10px; border-radius: 16px; }
+            .modal-header { font-size: 24px; }
+            .my-study-grid { grid-template-columns: 1fr; }
+            .semester-courses-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .actions { flex-direction: column; }
+            .icon-btn { width: 100%; }
+        }
+    </style>
+    <base target="_blank">
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1>📚 TUM Kursübersicht</h1>
+                <p class="subtitle">Entdecke und bewerte Kurse der Technischen Universität München</p>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="switchView('overview')">📋 Übersicht</div>
+                <div class="nav-tab" onclick="switchView('mystudy')">🎓 Mein Studium</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Overview Section -->
+        <div id="overviewSection" class="view-section active">
+            <div class="top-courses">
+                <div class="top-courses-title">🏆 Top bewertete Kurse</div>
+                <div class="top-courses-grid" id="topCoursesList">
+                    <div style="text-align: center; padding: 30px; color: var(--text-secondary); grid-column: 1 / -1;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">🌟</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">Noch keine bewerteten Kurse</div>
+                        <div style="font-size: 14px; opacity: 0.7;">Sei der Erste und bewerte einen Kurs!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="search-bar">
+                    <div class="search-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Kurse durchsuchen...">
+                </div>
+                <div class="filter-group">
+                    <button class="filter-btn active" onclick="filterDifficulty('alle')" data-filter="alle">Alle</button>
+                    <button class="filter-btn" onclick="filterDifficulty('leicht')" data-filter="leicht">Leicht</button>
+                    <button class="filter-btn" onclick="filterDifficulty('mittel')" data-filter="mittel">Mittel</button>
+                    <button class="filter-btn" onclick="filterDifficulty('schwer')" data-filter="schwer">Schwer</button>
+                    <select class="filter-select" id="ratingFilter" onchange="filterRating(this.value)">
+                        <option value="alle">⭐ Alle Bewertungen</option>
+                        <option value="4.5">⭐ 4.5+ Sterne</option>
+                        <option value="4.0">⭐ 4+ Sterne</option>
+                        <option value="3.0">⭐ 3+ Sterne</option>
+                        <option value="bewertet">⭐ Nur bewertet</option>
+                        <option value="nicht-bewertet">⭐ Nicht bewertet</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="openModal()">+ Kurs hinzufügen</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kursname</th>
+                            <th>Fachbereich</th>
+                            <th>ECTS</th>
+                            <th>Semester</th>
+                            <th>Format</th>
+                            <th>Schwierigkeit</th>
+                            <th>Aufwand</th>
+                            <th>Prüfung</th>
+                            <th>Bewertung</th>
+                            <th>Tipps</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="courseTable"></tbody>
+                </table>
+            </div>
+
+            <div class="guide-section">
+                <div class="guide-title">💡 Anleitung zur Nutzung</div>
+                <h3>So verwendest du die Kursübersicht:</h3>
+                <div class="usage-steps">
+                    <div class="usage-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text"><strong>Kurse hinzufügen:</strong> Klicke auf "+ Kurs hinzufügen" und fülle das Formular aus.</div>
+                    </div>
+                    <div class="usage-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text"><strong>Zu Mein Studium:</strong> Klicke auf 🎓, um Kurse zu deiner Planung hinzuzufügen.</div>
+                    </div>
+                    <div class="usage-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text"><strong>Semester planen:</strong> Im Reiter "Mein Studium" kannst du Semester anlegen und Kurse per Drag &amp; Drop zuordnen.</div>
+                    </div>
+                    <div class="usage-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text"><strong>Top-Liste:</strong> Die besten Kurse mit Durchschnittsbewertungen werden oben angezeigt!</div>
+                    </div>
+                </div>
+                <div class="guide-columns">
+                    <div class="guide-column">
+                        <h4>Spalten-Guide</h4>
+                        <div class="guide-item"><strong>Kursname</strong><span>Vollständiger Name + Ersteller</span></div>
+                        <div class="guide-item"><strong>Fachbereich</strong><span>z.B. Innovation & Entrepreneurship</span></div>
+                        <div class="guide-item"><strong>ECTS</strong><span>Credit Points</span></div>
+                        <div class="guide-item"><strong>Semester</strong><span>Angeboten im WS/SS/WS+SS</span></div>
+                    </div>
+                    <div class="guide-column">
+                        <h4>Features</h4>
+                        <div class="guide-item"><strong>🎓 Zu Mein Studium</strong><span>Plane dein Semester mit ausgewählten Kursen</span></div>
+                        <div class="guide-item"><strong>✏️ Bearbeiten</strong><span>Korrigiere oder aktualisiere Infos</span></div>
+                        <div class="guide-item"><strong>🗑️ Löschen</strong><span>Entferne fehlerhafte Einträge</span></div>
+                        <div class="guide-item"><strong>🏆 Aggregierte Top-Liste</strong><span>Durchschnittswerte von mehreren Bewertungen</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Study Section -->
+        <div id="myStudySection" class="view-section">
+            <div class="my-study-section">
+                <div class="my-study-header">
+                    <div class="my-study-title">🎓 Mein Studium</div>
+                    <div class="my-study-stats">
+                        <div class="my-study-stat">
+                            <span>Kurse:</span>
+                            <span class="my-study-stat-value" id="myStudyCount">0</span>
+                        </div>
+                        <div class="my-study-stat">
+                            <span>Gesamt ECTS:</span>
+                            <span class="my-study-stat-value" id="myStudyECTS">0</span>
+                        </div>
+                        <div class="my-study-stat">
+                            <span>Gesamt Aufwand:</span>
+                            <span class="my-study-stat-value" id="myStudyEffort">0h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unassigned courses pool -->
+                <div class="unassigned-pool" id="unassignedPool">
+                    <div class="unassigned-pool-title">
+                        📋 Nicht zugeordnete Kurse
+                        <span class="unassigned-pool-hint">— Ziehe Kurse in ein Semester</span>
+                    </div>
+                    <div class="my-study-grid" id="myStudyGrid"></div>
+                </div>
+
+                <!-- Semesters -->
+                <div class="semesters-container">
+                    <div class="semesters-header">
+                        <div class="semesters-title">📅 Semesterplanung</div>
+                        <button class="add-semester-btn" onclick="openSemesterModal()">+ Semester anlegen</button>
+                    </div>
+                    <div id="semestersList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div id="courseModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modalTitle">Neuer Kurs</h2>
+            <form id="courseForm">
+                <input type="hidden" id="editCourseId">
+                <div class="form-group">
+                    <label class="form-label">Dein Name *</label>
+                    <input type="text" class="form-input" id="createdBy" required placeholder="z.B. Max Mustermann">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kursname *</label>
+                    <input type="text" class="form-input" id="courseName" required placeholder="z.B. Einführung in die Informatik">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fachbereich *</label>
+                        <input type="text" class="form-input" id="courseFachbereich" required placeholder="z.B. Innovation & Entrepreneurship">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ECTS *</label>
+                        <input type="number" class="form-input" id="courseECTS" min="0" max="30" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Angeboten im Semester *</label>
+                        <select class="form-select" id="courseSemester" required>
+                            <option value="">Wählen...</option>
+                            <option value="WS">WS (Wintersemester)</option>
+                            <option value="SS">SS (Sommersemester)</option>
+                            <option value="WS/SS">WS/SS (Beide)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Format *</label>
+                        <select class="form-select" id="courseFormat" required>
+                            <option value="">Wählen...</option>
+                            <option value="Vorlesung">Vorlesung</option>
+                            <option value="Seminar">Seminar</option>
+                            <option value="Praktikum">Praktikum</option>
+                            <option value="Projekt">Projekt</option>
+                            <option value="Vorlesung + Übung">Vorlesung + Übung</option>
+                            <option value="Vorlesung + Praktikum">Vorlesung + Praktikum</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Schwierigkeit *</label>
+                        <select class="form-select" id="courseDifficulty" required>
+                            <option value="">Wählen...</option>
+                            <option value="leicht">Leicht</option>
+                            <option value="mittel">Mittel</option>
+                            <option value="schwer">Schwer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aufwand (h/Woche)</label>
+                        <input type="number" class="form-input" id="courseEffort" min="0" max="40" step="0.5" placeholder="z.B. 8">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Prüfungsform</label>
+                        <input type="text" class="form-input" id="courseExam" placeholder="z.B. Klausur 90 Min">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bewertung (1-5)</label>
+                        <input type="number" class="form-input" id="courseRating" min="1" max="5" step="0.1" placeholder="z.B. 4.5">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Insider-Tipps von Studierenden</label>
+                    <textarea class="form-textarea" id="courseTips" placeholder="Was sollten andere über diesen Kurs wissen?"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">Kurs hinzufügen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Semester Name Modal -->
+    <div id="semesterModal" class="semester-name-modal">
+        <div class="semester-name-content">
+            <h3>Neues Semester anlegen</h3>
+            <input type="text" id="semesterNameInput" placeholder="z.B. WS 2025/26, 1. Semester, ..." autofocus>
+            <div class="semester-name-actions">
+                <button class="btn-secondary" onclick="closeSemesterModal()">Abbrechen</button>
+                <button class="btn-primary" onclick="createSemester()">Anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://jwwfrbodwalnygcawhmv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_eYi4vhmS-EGg9iEZAxc8Gw_jttyVG_F';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let courses = [];
+        let myStudyCourses = [];
+        let semesters = []; // { id, name, courseIds: [] }
+        let currentFilter = 'alle';
+        let currentRatingFilter = 'alle';
+        let editingCourseId = null;
+        let searchTimeout = null;
+        let draggedCourseId = null;
+
+        // ── LocalStorage ──
+        function loadMyStudy() {
+            const saved = localStorage.getItem('myStudyCourses');
+            myStudyCourses = saved ? JSON.parse(saved) : [];
+            const savedSemesters = localStorage.getItem('mySemesters');
+            semesters = savedSemesters ? JSON.parse(savedSemesters) : [];
+            renderMyStudy();
+        }
+
+        function saveMyStudy() {
+            localStorage.setItem('myStudyCourses', JSON.stringify(myStudyCourses));
+            localStorage.setItem('mySemesters', JSON.stringify(semesters));
+            renderMyStudy();
+        }
+
+        // ── Add / Remove from study ──
+        function addToMyStudy(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            if (!course) return;
+            if (myStudyCourses.some(c => c.id === courseId)) {
+                alert('Dieser Kurs ist bereits in deinem Studium!');
+                return;
+            }
+            myStudyCourses.push(course);
+            saveMyStudy();
+            renderCourses();
+            alert('✅ Kurs zu Mein Studium hinzugefügt!');
+        }
+
+        function removeFromMyStudy(courseId) {
+            myStudyCourses = myStudyCourses.filter(c => c.id !== courseId);
+            // Also remove from any semester
+            semesters.forEach(sem => {
+                sem.courseIds = sem.courseIds.filter(id => id !== courseId);
+            });
+            saveMyStudy();
+            renderCourses();
+        }
+
+        // ── Semester management ──
+        function openSemesterModal() {
+            document.getElementById('semesterModal').classList.add('active');
+            document.getElementById('semesterNameInput').value = '';
+            setTimeout(() => document.getElementById('semesterNameInput').focus(), 100);
+        }
+
+        function closeSemesterModal() {
+            document.getElementById('semesterModal').classList.remove('active');
+        }
+
+        function createSemester() {
+            const name = document.getElementById('semesterNameInput').value.trim();
+            if (!name) { alert('Bitte gib einen Namen ein.'); return; }
+            semesters.push({
+                id: Date.now(),
+                name: name,
+                courseIds: []
+            });
+            saveMyStudy();
+            closeSemesterModal();
+        }
+
+        function deleteSemester(semId) {
+            if (!confirm('Semester löschen? Kurse werden wieder als "nicht zugeordnet" angezeigt.')) return;
+            semesters = semesters.filter(s => s.id !== semId);
+            saveMyStudy();
+        }
+
+        // ── Get courses assigned to a semester ──
+        function getSemesterCourses(semId) {
+            const sem = semesters.find(s => s.id === semId);
+            if (!sem) return [];
+            return sem.courseIds.map(id => myStudyCourses.find(c => c.id === id)).filter(Boolean);
+        }
+
+        // ── Get unassigned courses ──
+        function getUnassignedCourses() {
+            const assignedIds = new Set();
+            semesters.forEach(sem => sem.courseIds.forEach(id => assignedIds.add(id)));
+            return myStudyCourses.filter(c => !assignedIds.has(c.id));
+        }
+
+        // ── Compute stats for a list of courses (SUMMED effort, not averaged) ──
+        function computeStats(courseList) {
+            const count = courseList.length;
+            const totalECTS = courseList.reduce((sum, c) => sum + (c.ects || 0), 0);
+            // SUM of effort (not average of averages)
+            const totalEffort = courseList.reduce((sum, c) => sum + (c.effort || 0), 0);
+            return { count, totalECTS, totalEffort };
+        }
+
+        // ── Render course card HTML (reusable) ──
+        function renderCourseCard(course) {
+            return `
+                <div class="my-study-card" draggable="true"
+                     data-course-id="${course.id}"
+                     ondragstart="onDragStart(event, ${course.id})"
+                     ondragend="onDragEnd(event)">
+                    <div class="my-study-card-header">
+                        <div class="my-study-card-name">${escapeHtml(course.name)}</div>
+                        <button class="my-study-card-remove" onclick="removeFromMyStudy(${course.id})" title="Entfernen">✕</button>
+                    </div>
+                    <div class="my-study-card-meta">
+                        <span class="my-study-card-meta-item">📚 ${course.ects} ECTS</span>
+                        <span class="my-study-card-meta-item">📅 ${course.semester}</span>
+                        ${course.effort ? `<span class="my-study-card-meta-item">⏱️ ${course.effort}h</span>` : ''}
+                        ${course.rating ? `<span class="my-study-card-meta-item">⭐ ${course.rating.toFixed(1)}</span>` : ''}
+                    </div>
+                    <div class="my-study-card-fachbereich">${escapeHtml(course.fachbereich) || 'Kein Fachbereich'}</div>
+                </div>
+            `;
+        }
+
+        // ── Render full My Study section ──
+        function renderMyStudy() {
+            // Global stats (all courses in study)
+            const globalStats = computeStats(myStudyCourses);
+            document.getElementById('myStudyCount').textContent = globalStats.count;
+            document.getElementById('myStudyECTS').textContent = globalStats.totalECTS;
+            document.getElementById('myStudyEffort').textContent = globalStats.totalEffort > 0 ? globalStats.totalEffort + 'h' : '0h';
+
+            // Unassigned pool
+            const unassigned = getUnassignedCourses();
+            const grid = document.getElementById('myStudyGrid');
+
+            if (myStudyCourses.length === 0) {
+                grid.innerHTML = `
+                    <div class="my-study-empty" style="grid-column: 1 / -1;">
+                        <div class="my-study-empty-icon">🎓</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">Noch keine Kurse in deinem Studium</div>
+                        <div style="font-size: 14px; opacity: 0.7;">Wechsle zur Übersicht und füge Kurse hinzu!</div>
+                    </div>
+                `;
+            } else if (unassigned.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:15px; color:var(--text-muted); font-size:14px;">Alle Kurse sind Semestern zugeordnet ✓</div>`;
+            } else {
+                grid.innerHTML = unassigned.map(c => renderCourseCard(c)).join('');
+            }
+
+            // Semesters
+            const semList = document.getElementById('semestersList');
+            if (semesters.length === 0) {
+                semList.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">Noch keine Semester angelegt. Klicke oben auf "+ Semester anlegen".</div>`;
+                return;
+            }
+
+            semList.innerHTML = semesters.map(sem => {
+                const semCourses = getSemesterCourses(sem.id);
+                const stats = computeStats(semCourses);
+
+                return `
+                    <div class="semester-block" id="semester-${sem.id}"
+                         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)"
+                         ondrop="onDropSemester(event, ${sem.id})">
+                        <div class="semester-block-header">
+                            <div class="semester-block-title">📅 ${escapeHtml(sem.name)}</div>
+                            <div style="display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                                <div class="semester-block-stats">
+                                    <div class="semester-block-stat">
+                                        Kurse: <span class="semester-block-stat-value">${stats.count}</span>
+                                    </div>
+                                    <div class="semester-block-stat">
+                                        ECTS: <span class="semester-block-stat-value">${stats.totalECTS}</span>
+                                    </div>
+                                    <div class="semester-block-stat">
+                                        Aufwand: <span class="semester-block-stat-value">${stats.totalEffort}h</span>
+                                    </div>
+                                </div>
+                                <button class="semester-delete-btn" onclick="deleteSemester(${sem.id})">🗑️ Löschen</button>
+                            </div>
+                        </div>
+                        <div class="semester-courses-grid">
+                            ${semCourses.length > 0
+                                ? semCourses.map(c => renderCourseCard(c)).join('')
+                                : '<div class="semester-drop-hint">Ziehe Kurse hierher, um sie diesem Semester zuzuordnen</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ── Drag & Drop ──
+        function onDragStart(e, courseId) {
+            draggedCourseId = courseId;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', courseId);
+            setTimeout(() => e.target.classList.add('dragging'), 0);
+        }
+
+        function onDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedCourseId = null;
+            // Remove all drag-over states
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function onDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function onDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function onDropSemester(e, semId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if (!draggedCourseId) return;
+
+            const courseId = draggedCourseId;
+
+            // Remove from any current semester
+            semesters.forEach(sem => {
+                sem.courseIds = sem.courseIds.filter(id => id !== courseId);
+            });
+
+            // Add to target semester
+            const targetSem = semesters.find(s => s.id === semId);
+            if (targetSem && !targetSem.courseIds.includes(courseId)) {
+                targetSem.courseIds.push(courseId);
+            }
+
+            saveMyStudy();
+        }
+
+        function onDropUnassigned(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if (!draggedCourseId) return;
+
+            // Remove from any semester (back to unassigned)
+            semesters.forEach(sem => {
+                sem.courseIds = sem.courseIds.filter(id => id !== draggedCourseId);
+            });
+
+            saveMyStudy();
+        }
+
+        // ── View switching ──
+        function switchView(view) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+
+            if (view === 'overview') {
+                event.target.classList.add('active');
+                document.getElementById('overviewSection').classList.add('active');
+            } else if (view === 'mystudy') {
+                event.target.classList.add('active');
+                document.getElementById('myStudySection').classList.add('active');
+                renderMyStudy();
+            }
+        }
+
+        // ── Init ──
+        async function init() {
+            await loadCourses();
+            loadMyStudy();
+            setupSearch();
+
+            // Setup drop on unassigned pool
+            const pool = document.getElementById('unassignedPool');
+            pool.addEventListener('dragover', onDragOver);
+            pool.addEventListener('dragleave', onDragLeave);
+            pool.addEventListener('drop', onDropUnassigned);
+        }
+
+        async function loadCourses() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('courses')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                courses = data || [];
+                renderCourses();
+                renderTopCourses();
+            } catch (error) {
+                console.error('Error loading courses:', error);
+            }
+        }
+
+        function aggregateCourses() {
+            const courseMap = new Map();
+            courses.forEach(course => {
+                const normalizedName = course.name.toLowerCase().trim();
+                if (!courseMap.has(normalizedName)) {
+                    courseMap.set(normalizedName, {
+                        name: course.name,
+                        fachbereich: course.fachbereich,
+                        ects: course.ects,
+                        semester: course.semester,
+                        ratings: [],
+                        contributors: [],
+                        entries: []
+                    });
+                }
+                const entry = courseMap.get(normalizedName);
+                if (course.rating) entry.ratings.push(course.rating);
+                if (course.created_by) entry.contributors.push(course.created_by);
+                entry.entries.push(course);
+            });
+
+            return Array.from(courseMap.values())
+                .filter(c => c.ratings.length > 0)
+                .map(c => ({
+                    ...c,
+                    avgRating: c.ratings.reduce((a, b) => a + b, 0) / c.ratings.length,
+                    ratingCount: c.ratings.length
+                }))
+                .sort((a, b) => b.avgRating - a.avgRating);
+        }
+
+        function renderTopCourses() {
+            const container = document.getElementById('topCoursesList');
+            const aggregated = aggregateCourses().slice(0, 3);
+
+            if (aggregated.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">🌟</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">Noch keine bewerteten Kurse</div>
+                        <div style="font-size: 14px; opacity: 0.7;">Sei der Erste und bewerte einen Kurs!</div>
+                    </div>`;
+                return;
+            }
+
+            const rankClasses = ['gold', 'silver', 'bronze'];
+            const medals = ['🥇', '🥈', '🥉'];
+
+            container.innerHTML = aggregated.map((course, i) => {
+                let contributorsHTML = '';
+                if (course.contributors.length > 0) {
+                    const unique = [...new Set(course.contributors)];
+                    const display = unique.slice(0, 3);
+                    const remaining = unique.length - 3;
+                    contributorsHTML = `
+                        <div class="top-course-contributors">
+                            Bewertet von: 
+                            ${display.map(c => `<span class="contributor-tag">${escapeHtml(c)}</span>`).join('')}
+                            ${remaining > 0 ? `<span class="contributor-tag">+${remaining} weitere</span>` : ''}
+                        </div>`;
+                }
+                return `
+                    <div class="top-course-card">
+                        <div class="top-course-rank ${rankClasses[i]}">${medals[i]}</div>
+                        <div class="top-course-name">${escapeHtml(course.name)}</div>
+                        <div class="top-course-meta">
+                            <span class="top-course-meta-item">📚 ${escapeHtml(course.fachbereich) || 'N/A'}</span>
+                            <span class="top-course-meta-item">⭐ ${course.ects} ECTS</span>
+                            <span class="top-course-meta-item">📅 ${course.semester}</span>
+                            <span class="top-course-meta-item">📊 ${course.ratingCount} ${course.ratingCount === 1 ? 'Bewertung' : 'Bewertungen'}</span>
+                        </div>
+                        ${contributorsHTML}
+                        <div class="top-course-rating">${course.avgRating.toFixed(1)} ⭐</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function openModal(courseId = null) {
+            const modal = document.getElementById('courseModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (courseId) {
+                editingCourseId = courseId;
+                const course = courses.find(c => c.id === courseId);
+                modalTitle.textContent = 'Kurs bearbeiten';
+                submitBtn.textContent = 'Änderungen speichern';
+                document.getElementById('editCourseId').value = courseId;
+                document.getElementById('createdBy').value = course.created_by || '';
+                document.getElementById('courseName').value = course.name;
+                document.getElementById('courseFachbereich').value = course.fachbereich || '';
+                document.getElementById('courseECTS').value = course.ects;
+                document.getElementById('courseSemester').value = course.semester;
+                document.getElementById('courseFormat').value = course.format || '';
+                document.getElementById('courseDifficulty').value = course.difficulty;
+                document.getElementById('courseEffort').value = course.effort || '';
+                document.getElementById('courseExam').value = course.exam || '';
+                document.getElementById('courseRating').value = course.rating || '';
+                document.getElementById('courseTips').value = course.tips || '';
+            } else {
+                editingCourseId = null;
+                modalTitle.textContent = 'Neuer Kurs';
+                submitBtn.textContent = 'Kurs hinzufügen';
+                document.getElementById('courseForm').reset();
+                document.getElementById('editCourseId').value = '';
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('courseModal').classList.remove('active');
+            document.getElementById('courseForm').reset();
+            editingCourseId = null;
+            document.body.style.overflow = '';
+            document.getElementById('modalTitle').textContent = 'Neuer Kurs';
+            document.getElementById('submitBtn').textContent = 'Kurs hinzufügen';
+        }
+
+        document.getElementById('courseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const courseData = {
+                name: document.getElementById('courseName').value,
+                fachbereich: document.getElementById('courseFachbereich').value,
+                ects: parseInt(document.getElementById('courseECTS').value),
+                semester: document.getElementById('courseSemester').value,
+                format: document.getElementById('courseFormat').value,
+                difficulty: document.getElementById('courseDifficulty').value,
+                effort: parseFloat(document.getElementById('courseEffort').value) || null,
+                exam: document.getElementById('courseExam').value || null,
+                rating: parseFloat(document.getElementById('courseRating').value) || null,
+                tips: document.getElementById('courseTips').value || null,
+                created_by: document.getElementById('createdBy').value
+            };
+
+            try {
+                if (editingCourseId) {
+                    const { data, error } = await supabaseClient.from('courses').update(courseData).eq('id', editingCourseId).select();
+                    if (error) throw error;
+                    const index = courses.findIndex(c => c.id === editingCourseId);
+                    if (index !== -1 && data && data[0]) courses[index] = data[0];
+                } else {
+                    const { data, error } = await supabaseClient.from('courses').insert([courseData]).select();
+                    if (error) throw error;
+                    if (data && data[0]) courses.unshift(data[0]);
+                }
+                renderCourses();
+                renderTopCourses();
+                closeModal();
+            } catch (error) {
+                console.error('Error saving course:', error);
+                alert('Fehler beim Speichern: ' + error.message);
+            }
+        });
+
+        async function deleteCourse(id) {
+            if (!confirm('Möchtest du diesen Kurs wirklich löschen?')) return;
+            try {
+                const { error } = await supabaseClient.from('courses').delete().eq('id', id);
+                if (error) throw error;
+                courses = courses.filter(c => c.id !== id);
+                renderCourses();
+                renderTopCourses();
+            } catch (error) {
+                console.error('Error deleting course:', error);
+                alert('Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        function filterDifficulty(difficulty) {
+            currentFilter = difficulty;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === difficulty);
+            });
+            renderCourses();
+        }
+
+        function filterRating(rating) {
+            currentRatingFilter = rating;
+            renderCourses();
+        }
+
+        function setupSearch() {
+            document.getElementById('searchInput').addEventListener('input', function() {
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => renderCourses(), 300);
+            });
+        }
+
+        function renderCourses() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = courses;
+
+            if (currentFilter !== 'alle') filtered = filtered.filter(c => c.difficulty === currentFilter);
+
+            if (currentRatingFilter !== 'alle') {
+                switch (currentRatingFilter) {
+                    case '4.5': filtered = filtered.filter(c => c.rating && c.rating >= 4.5); break;
+                    case '4.0': filtered = filtered.filter(c => c.rating && c.rating >= 4); break;
+                    case '3.0': filtered = filtered.filter(c => c.rating && c.rating >= 3); break;
+                    case 'bewertet': filtered = filtered.filter(c => c.rating && c.rating > 0); break;
+                    case 'nicht-bewertet': filtered = filtered.filter(c => !c.rating || c.rating === 0); break;
+                }
+            }
+
+            if (searchTerm) {
+                filtered = filtered.filter(c =>
+                    c.name.toLowerCase().includes(searchTerm) ||
+                    (c.fachbereich && c.fachbereich.toLowerCase().includes(searchTerm)) ||
+                    (c.tips && c.tips.toLowerCase().includes(searchTerm)) ||
+                    (c.created_by && c.created_by.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            const tbody = document.getElementById('courseTable');
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-text">Keine Kurse gefunden</div><button class="btn-primary" onclick="openModal()">Ersten Kurs hinzufügen</button></div></td></tr>`;
+                return;
+            }
+
+            requestAnimationFrame(() => {
+                tbody.innerHTML = filtered.map(course => {
+                    const isInStudy = myStudyCourses.some(c => c.id === course.id);
+                    return `
+                        <tr>
+                            <td><div class="course-name">${escapeHtml(course.name)}</div>${course.created_by ? `<div class="created-by">von ${escapeHtml(course.created_by)}</div>` : ''}</td>
+                            <td>${escapeHtml(course.fachbereich) || '—'}</td>
+                            <td>${course.ects}</td>
+                            <td>${course.semester}</td>
+                            <td>${escapeHtml(course.format) || '—'}</td>
+                            <td><span class="badge badge-${course.difficulty}">${course.difficulty.charAt(0).toUpperCase() + course.difficulty.slice(1)}</span></td>
+                            <td>${course.effort ? course.effort + ' h' : '—'}</td>
+                            <td>${escapeHtml(course.exam) || '—'}</td>
+                            <td>${course.rating ? `<span class="rating">${course.rating.toFixed(1)} ⭐</span>` : '—'}</td>
+                            <td style="max-width: 300px; white-space: normal; color: var(--text-secondary);">${escapeHtml(course.tips) || '—'}</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="icon-btn add-to-study ${isInStudy ? 'added' : ''}" onclick="addToMyStudy(${course.id})" title="${isInStudy ? 'Bereits hinzugefügt' : 'Zu Mein Studium hinzufügen'}">${isInStudy ? '✓' : '🎓'}</button>
+                                    <button class="icon-btn edit" onclick="openModal(${course.id})" title="Bearbeiten">✏️</button>
+                                    <button class="icon-btn delete" onclick="deleteCourse(${course.id})" title="Löschen">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Modal close handlers
+        document.getElementById('courseModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('semesterModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSemesterModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { closeModal(); closeSemesterModal(); }
+        });
+        document.getElementById('semesterNameInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); createSemester(); }
+        });
+
+        init();
+
+        supabaseClient
+            .channel('courses')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, () => loadCourses())
+            .subscribe();
+    </script>
+</body>
+</html>
