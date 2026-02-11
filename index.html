@@ -1682,6 +1682,7 @@
         let draggedCourseId = null;
         let authMode = 'login';
         let currentUser = null;
+        let isAdmin = false;
 
         function setAuthMessage(message, isError = false) {
             const msg = document.getElementById('authMessage');
@@ -1710,9 +1711,34 @@
         function setCurrentUser(user) {
             currentUser = user;
             const badge = document.getElementById('userEmailBadge');
-            badge.textContent = user?.email || 'Nicht angemeldet';
+            const roleLabel = isAdmin ? ' (Admin)' : '';
+            badge.textContent = user?.email ? `${user.email}${roleLabel}` : 'Nicht angemeldet';
             const createdByInput = document.getElementById('createdBy');
             if (user?.email && !createdByInput.value) createdByInput.value = user.email;
+        }
+
+        async function loadAdminStatus() {
+            if (!currentUser) {
+                isAdmin = false;
+                setCurrentUser(currentUser);
+                return;
+            }
+
+            const { data, error } = await supabaseClient.rpc('is_app_admin', { check_user: currentUser.id });
+            if (error) {
+                console.warn('Admin check failed:', error.message);
+                isAdmin = false;
+            } else {
+                isAdmin = !!data;
+            }
+
+            setCurrentUser(currentUser);
+        }
+
+        function canManageCourse(course) {
+            if (!course || !currentUser) return false;
+            if (isAdmin) return true;
+            return course.created_by_user_id === currentUser.id;
         }
 
         async function loadMyStudy() {
@@ -2048,6 +2074,7 @@
         }
 
         async function refreshAppData() {
+            await loadAdminStatus();
             await loadCourses();
             await loadMyStudy();
             renderCourses();
@@ -2082,6 +2109,7 @@
                     hideAuthGate();
                     await refreshAppData();
                 } else {
+                    isAdmin = false;
                     setCurrentUser(null);
                     courses = [];
                     myStudyCourses = [];
@@ -2214,8 +2242,13 @@
             const submitBtn = document.getElementById('submitBtn');
 
             if (courseId) {
-                editingCourseId = courseId;
                 const course = courses.find(c => c.id === courseId);
+                if (!canManageCourse(course)) {
+                    alert('Du kannst nur deine eigenen Kurse bearbeiten.');
+                    return;
+                }
+
+                editingCourseId = courseId;
                 modalTitle.textContent = 'Kurs bearbeiten';
                 submitBtn.textContent = 'Änderungen speichern';
                 document.getElementById('editCourseId').value = courseId;
@@ -2253,7 +2286,7 @@
 
         document.getElementById('courseForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const courseData = {
+            const baseCourseData = {
                 name: document.getElementById('courseName').value,
                 fachbereich: document.getElementById('courseFachbereich').value,
                 ects: parseInt(document.getElementById('courseECTS').value),
@@ -2269,12 +2302,18 @@
 
             try {
                 if (editingCourseId) {
-                    const { data, error } = await supabaseClient.from('courses').update(courseData).eq('id', editingCourseId).select();
+                    const originalCourse = courses.find(c => c.id === editingCourseId);
+                    if (!canManageCourse(originalCourse)) {
+                        alert('Keine Berechtigung zum Bearbeiten dieses Kurses.');
+                        return;
+                    }
+                    const { data, error } = await supabaseClient.from('courses').update(baseCourseData).eq('id', editingCourseId).select();
                     if (error) throw error;
                     const index = courses.findIndex(c => c.id === editingCourseId);
                     if (index !== -1 && data && data[0]) courses[index] = data[0];
                 } else {
-                    const { data, error } = await supabaseClient.from('courses').insert([courseData]).select();
+                    const insertCourseData = { ...baseCourseData, created_by_user_id: currentUser?.id || null };
+                    const { data, error } = await supabaseClient.from('courses').insert([insertCourseData]).select();
                     if (error) throw error;
                     if (data && data[0]) courses.unshift(data[0]);
                 }
@@ -2288,6 +2327,11 @@
         });
 
         async function deleteCourse(id) {
+            const course = courses.find(c => c.id === id);
+            if (!canManageCourse(course)) {
+                alert('Keine Berechtigung zum Löschen dieses Kurses.');
+                return;
+            }
             if (!confirm('Möchtest du diesen Kurs wirklich löschen?')) return;
             try {
                 const { error } = await supabaseClient.from('courses').delete().eq('id', id);
@@ -2356,6 +2400,7 @@
             requestAnimationFrame(() => {
                 tbody.innerHTML = filtered.map(course => {
                     const isInStudy = myStudyCourses.some(c => c.id === course.id);
+                    const canManage = canManageCourse(course);
                     return `
                         <tr>
                             <td><div class="course-name">${escapeHtml(course.name)}</div>${course.created_by ? `<div class="created-by">von ${escapeHtml(course.created_by)}</div>` : ''}</td>
@@ -2371,8 +2416,8 @@
                             <td>
                                 <div class="actions">
                                     <button class="icon-btn add-to-study ${isInStudy ? 'added' : ''}" onclick="addToMyStudy(${course.id})" title="${isInStudy ? 'Bereits hinzugefügt' : 'Zu Mein Studium hinzufügen'}">${isInStudy ? '✓' : '🎓'}</button>
-                                    <button class="icon-btn edit" onclick="openModal(${course.id})" title="Bearbeiten">✏️</button>
-                                    <button class="icon-btn delete" onclick="deleteCourse(${course.id})" title="Löschen">🗑️</button>
+                                    ${canManage ? `<button class="icon-btn edit" onclick="openModal(${course.id})" title="Bearbeiten">✏️</button>
+                                    <button class="icon-btn delete" onclick="deleteCourse(${course.id})" title="Löschen">🗑️</button>` : `<button class="icon-btn" disabled title="Nur der Ersteller oder Admin kann bearbeiten">🔒</button>`}
                                 </div>
                             </td>
                         </tr>`;

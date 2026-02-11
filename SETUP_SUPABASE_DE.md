@@ -107,7 +107,40 @@ So kannst du gefahrlos testen, ohne Live-Daten zu beschädigen.
 
 ---
 
-## 7) Häufige Fehler
+
+## 6) Admin einrichten (du kannst alle Kurse bearbeiten/löschen)
+
+Nach Ausführung der SQL-Datei gibt es die Tabelle `app_admins` und die Funktion `is_app_admin(...)`.
+
+### So machst du deinen Account zum Admin
+
+1. Registriere dich normal auf deiner Website.
+2. Öffne Supabase → **SQL Editor**.
+3. Führe diesen SQL-Befehl aus (E-Mail anpassen):
+
+```sql
+insert into public.app_admins (user_id)
+select id
+from auth.users
+where email = 'DEINE_EMAIL@beispiel.de'
+on conflict (user_id) do nothing;
+```
+
+4. Danach ausloggen + neu einloggen.
+5. Oben im Badge sollte „(Admin)“ erscheinen.
+
+---
+
+## 7) Owner-Regel für Kurse
+
+- Beim Erstellen eines Kurses wird jetzt intern die User-ID des Erstellers gespeichert (`created_by_user_id`).
+- **Bearbeiten/Löschen dürfen nur:**
+  - der Ersteller des Kurses
+  - oder ein Admin
+- Andere Nutzer sehen bei fremden Kursen ein 🔒 statt Bearbeiten/Löschen.
+
+---
+## 8) Häufige Fehler
 
 ### Fehler: „permission denied" oder leere Daten
 
@@ -125,7 +158,7 @@ So kannst du gefahrlos testen, ohne Live-Daten zu beschädigen.
 
 ---
 
-## 8) Deployment
+## 9) Deployment
 
 Du kannst die statische Seite z. B. bei Netlify, Vercel oder GitHub Pages deployen.
 
