@@ -2097,10 +2097,20 @@
                     if (error) return setAuthMessage(error.message, true);
                     setAuthMessage('Login erfolgreich.');
                 } else {
-                    const { error } = await supabaseClient.auth.signUp({ email, password });
-                    if (error) return setAuthMessage(error.message, true);
-                    setAuthMessage('Registrierung erfolgreich. Bitte E-Mail bestätigen (falls aktiviert) und dann einloggen.');
-                }
+                    const EMAIL_REDIRECT_TO = "https://koestni.github.io/Course-Overview-internal-Development/";
+                
+                    const { error } = await supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            emailRedirectTo: EMAIL_REDIRECT_TO
+                        }
+                    });
+
+    if (error) return setAuthMessage(error.message, true);
+
+    setAuthMessage('Registrierung erfolgreich. Bitte E-Mail bestätigen und dann einloggen.');
+}
             });
 
             supabaseClient.auth.onAuthStateChange(async (_, session) => {
