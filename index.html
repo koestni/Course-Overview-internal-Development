@@ -1325,10 +1325,88 @@
             .actions { flex-direction: column; }
             .icon-btn { width: 100%; }
         }
+
+        .auth-gate {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        .auth-title { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+        .auth-subtitle { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
+        .auth-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+        .auth-tab {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .auth-tab.active {
+            color: white;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+        }
+        .auth-message { min-height: 22px; font-size: 13px; color: var(--text-secondary); margin-top: 10px; }
+        .auth-message.error { color: #fca5a5; }
+        .auth-user-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .auth-user-badge {
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
     </style>
     <base target="_blank">
 </head>
 <body>
+    <div id="authGate" class="auth-gate">
+        <div class="auth-card">
+            <div class="auth-title">🔐 Anmeldung erforderlich</div>
+            <div class="auth-subtitle">Melde dich an, um die Kursübersicht zu sehen und dein persönliches Studium zu speichern.</div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="loginTab" onclick="switchAuthMode('login')">Login</button>
+                <button class="auth-tab" id="registerTab" onclick="switchAuthMode('register')">Registrieren</button>
+            </div>
+            <form id="authForm">
+                <div class="form-group">
+                    <label class="form-label">E-Mail</label>
+                    <input class="form-input" type="email" id="authEmail" required placeholder="name@tum.de">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passwort</label>
+                    <input class="form-input" type="password" id="authPassword" minlength="6" required placeholder="Mindestens 6 Zeichen">
+                </div>
+                <button class="btn-primary" type="submit" id="authSubmitBtn" style="width:100%;">Einloggen</button>
+                <div class="auth-message" id="authMessage"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="appRoot" style="display:none;">
     <div class="header">
         <div class="header-content">
             <div class="header-text">
@@ -1336,8 +1414,12 @@
                 <p class="subtitle">Entdecke und bewerte Kurse der Technischen Universität München</p>
             </div>
             <div class="nav-tabs">
-                <div class="nav-tab active" onclick="switchView('overview')">📋 Übersicht</div>
-                <div class="nav-tab" onclick="switchView('mystudy')">🎓 Mein Studium</div>
+                <div class="nav-tab active" onclick="switchView('overview', event)">📋 Übersicht</div>
+                <div class="nav-tab" onclick="switchView('mystudy', event)">🎓 Mein Studium</div>
+            </div>
+            <div class="auth-user-controls">
+                <div class="auth-user-badge" id="userEmailBadge">Nicht angemeldet</div>
+                <button class="btn-secondary" onclick="logout()">Logout</button>
             </div>
         </div>
     </div>
@@ -1582,6 +1664,8 @@
         </div>
     </div>
 
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://jwwfrbodwalnygcawhmv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_eYi4vhmS-EGg9iEZAxc8Gw_jttyVG_F';
@@ -1589,49 +1673,142 @@
 
         let courses = [];
         let myStudyCourses = [];
+        let myStudyCourseIds = [];
         let semesters = []; // { id, name, courseIds: [] }
         let currentFilter = 'alle';
         let currentRatingFilter = 'alle';
         let editingCourseId = null;
         let searchTimeout = null;
         let draggedCourseId = null;
+        let authMode = 'login';
+        let currentUser = null;
 
-        // ── LocalStorage ──
-        function loadMyStudy() {
-            const saved = localStorage.getItem('myStudyCourses');
-            myStudyCourses = saved ? JSON.parse(saved) : [];
-            const savedSemesters = localStorage.getItem('mySemesters');
-            semesters = savedSemesters ? JSON.parse(savedSemesters) : [];
+        function setAuthMessage(message, isError = false) {
+            const msg = document.getElementById('authMessage');
+            msg.textContent = message || '';
+            msg.classList.toggle('error', isError);
+        }
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            document.getElementById('loginTab').classList.toggle('active', mode === 'login');
+            document.getElementById('registerTab').classList.toggle('active', mode === 'register');
+            document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Einloggen' : 'Konto erstellen';
+            setAuthMessage('');
+        }
+
+        function showAuthGate() {
+            document.getElementById('authGate').style.display = 'flex';
+            document.getElementById('appRoot').style.display = 'none';
+        }
+
+        function hideAuthGate() {
+            document.getElementById('authGate').style.display = 'none';
+            document.getElementById('appRoot').style.display = 'block';
+        }
+
+        function setCurrentUser(user) {
+            currentUser = user;
+            const badge = document.getElementById('userEmailBadge');
+            badge.textContent = user?.email || 'Nicht angemeldet';
+            const createdByInput = document.getElementById('createdBy');
+            if (user?.email && !createdByInput.value) createdByInput.value = user.email;
+        }
+
+        async function loadMyStudy() {
+            if (!currentUser) return;
+            const { data: studyRows, error: studyError } = await supabaseClient
+                .from('user_study_courses')
+                .select('course_id')
+                .eq('user_id', currentUser.id);
+
+            if (studyError) throw studyError;
+            myStudyCourseIds = (studyRows || []).map(r => r.course_id);
+            myStudyCourses = courses.filter(c => myStudyCourseIds.includes(c.id));
+
+            const { data: semesterRows, error: semesterError } = await supabaseClient
+                .from('user_semesters')
+                .select('id, name, course_ids')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: true });
+
+            if (semesterError) throw semesterError;
+            semesters = (semesterRows || []).map(sem => ({
+                id: sem.id,
+                name: sem.name,
+                courseIds: Array.isArray(sem.course_ids) ? sem.course_ids : []
+            }));
+
             renderMyStudy();
         }
 
-        function saveMyStudy() {
-            localStorage.setItem('myStudyCourses', JSON.stringify(myStudyCourses));
-            localStorage.setItem('mySemesters', JSON.stringify(semesters));
+        async function saveSemesters() {
+            if (!currentUser) return;
+            await Promise.all(semesters.map(sem =>
+                supabaseClient
+                    .from('user_semesters')
+                    .update({ course_ids: sem.courseIds })
+                    .eq('id', sem.id)
+                    .eq('user_id', currentUser.id)
+            ));
             renderMyStudy();
+        }
+
+        function syncMyStudyCoursesFromIds() {
+            myStudyCourses = courses.filter(c => myStudyCourseIds.includes(c.id));
+            semesters = semesters.map(sem => ({
+                ...sem,
+                courseIds: sem.courseIds.filter(id => myStudyCourseIds.includes(id))
+            }));
         }
 
         // ── Add / Remove from study ──
-        function addToMyStudy(courseId) {
+        async function addToMyStudy(courseId) {
+            if (!currentUser) return;
             const course = courses.find(c => c.id === courseId);
             if (!course) return;
-            if (myStudyCourses.some(c => c.id === courseId)) {
+            if (myStudyCourseIds.includes(courseId)) {
                 alert('Dieser Kurs ist bereits in deinem Studium!');
                 return;
             }
-            myStudyCourses.push(course);
-            saveMyStudy();
+
+            const { error } = await supabaseClient
+                .from('user_study_courses')
+                .insert([{ user_id: currentUser.id, course_id: courseId }]);
+
+            if (error) {
+                alert('Fehler beim Hinzufügen: ' + error.message);
+                return;
+            }
+
+            myStudyCourseIds.push(courseId);
+            syncMyStudyCoursesFromIds();
+            renderMyStudy();
             renderCourses();
             alert('✅ Kurs zu Mein Studium hinzugefügt!');
         }
 
-        function removeFromMyStudy(courseId) {
-            myStudyCourses = myStudyCourses.filter(c => c.id !== courseId);
-            // Also remove from any semester
+        async function removeFromMyStudy(courseId) {
+            if (!currentUser) return;
+            const { error } = await supabaseClient
+                .from('user_study_courses')
+                .delete()
+                .eq('user_id', currentUser.id)
+                .eq('course_id', courseId);
+
+            if (error) {
+                alert('Fehler beim Entfernen: ' + error.message);
+                return;
+            }
+
+            myStudyCourseIds = myStudyCourseIds.filter(id => id !== courseId);
             semesters.forEach(sem => {
                 sem.courseIds = sem.courseIds.filter(id => id !== courseId);
             });
-            saveMyStudy();
+
+            await saveSemesters();
+            syncMyStudyCoursesFromIds();
+            renderMyStudy();
             renderCourses();
         }
 
@@ -1646,22 +1823,44 @@
             document.getElementById('semesterModal').classList.remove('active');
         }
 
-        function createSemester() {
+        async function createSemester() {
+            if (!currentUser) return;
             const name = document.getElementById('semesterNameInput').value.trim();
             if (!name) { alert('Bitte gib einen Namen ein.'); return; }
-            semesters.push({
-                id: Date.now(),
-                name: name,
-                courseIds: []
-            });
-            saveMyStudy();
+
+            const { data, error } = await supabaseClient
+                .from('user_semesters')
+                .insert([{ user_id: currentUser.id, name, course_ids: [] }])
+                .select('id, name, course_ids')
+                .single();
+
+            if (error) {
+                alert('Fehler beim Anlegen: ' + error.message);
+                return;
+            }
+
+            semesters.push({ id: data.id, name: data.name, courseIds: data.course_ids || [] });
+            renderMyStudy();
             closeSemesterModal();
         }
 
-        function deleteSemester(semId) {
+        async function deleteSemester(semId) {
+            if (!currentUser) return;
             if (!confirm('Semester löschen? Kurse werden wieder als "nicht zugeordnet" angezeigt.')) return;
+
+            const { error } = await supabaseClient
+                .from('user_semesters')
+                .delete()
+                .eq('id', semId)
+                .eq('user_id', currentUser.id);
+
+            if (error) {
+                alert('Fehler beim Löschen: ' + error.message);
+                return;
+            }
+
             semesters = semesters.filter(s => s.id !== semId);
-            saveMyStudy();
+            renderMyStudy();
         }
 
         // ── Get courses assigned to a semester ──
@@ -1803,66 +2002,116 @@
             e.currentTarget.classList.remove('drag-over');
         }
 
-        function onDropSemester(e, semId) {
+        async function onDropSemester(e, semId) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
             if (!draggedCourseId) return;
 
             const courseId = draggedCourseId;
-
-            // Remove from any current semester
             semesters.forEach(sem => {
                 sem.courseIds = sem.courseIds.filter(id => id !== courseId);
             });
 
-            // Add to target semester
             const targetSem = semesters.find(s => s.id === semId);
             if (targetSem && !targetSem.courseIds.includes(courseId)) {
                 targetSem.courseIds.push(courseId);
             }
 
-            saveMyStudy();
+            await saveSemesters();
         }
 
-        function onDropUnassigned(e) {
+        async function onDropUnassigned(e) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
             if (!draggedCourseId) return;
 
-            // Remove from any semester (back to unassigned)
             semesters.forEach(sem => {
                 sem.courseIds = sem.courseIds.filter(id => id !== draggedCourseId);
             });
 
-            saveMyStudy();
+            await saveSemesters();
         }
 
         // ── View switching ──
-        function switchView(view) {
+        function switchView(view, evt) {
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
 
             if (view === 'overview') {
-                event.target.classList.add('active');
+                evt.target.classList.add('active');
                 document.getElementById('overviewSection').classList.add('active');
             } else if (view === 'mystudy') {
-                event.target.classList.add('active');
+                evt.target.classList.add('active');
                 document.getElementById('myStudySection').classList.add('active');
                 renderMyStudy();
             }
         }
 
+        async function refreshAppData() {
+            await loadCourses();
+            await loadMyStudy();
+            renderCourses();
+            renderMyStudy();
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+        }
+
+        function setupAuth() {
+            document.getElementById('authForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('authEmail').value.trim();
+                const password = document.getElementById('authPassword').value;
+                setAuthMessage('Bitte warten...');
+
+                if (authMode === 'login') {
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) return setAuthMessage(error.message, true);
+                    setAuthMessage('Login erfolgreich.');
+                } else {
+                    const { error } = await supabaseClient.auth.signUp({ email, password });
+                    if (error) return setAuthMessage(error.message, true);
+                    setAuthMessage('Registrierung erfolgreich. Bitte E-Mail bestätigen (falls aktiviert) und dann einloggen.');
+                }
+            });
+
+            supabaseClient.auth.onAuthStateChange(async (_, session) => {
+                if (session?.user) {
+                    setCurrentUser(session.user);
+                    hideAuthGate();
+                    await refreshAppData();
+                } else {
+                    setCurrentUser(null);
+                    courses = [];
+                    myStudyCourses = [];
+                    myStudyCourseIds = [];
+                    semesters = [];
+                    showAuthGate();
+                    renderCourses();
+                    renderMyStudy();
+                }
+            });
+        }
+
         // ── Init ──
         async function init() {
-            await loadCourses();
-            loadMyStudy();
             setupSearch();
+            setupAuth();
 
-            // Setup drop on unassigned pool
             const pool = document.getElementById('unassignedPool');
             pool.addEventListener('dragover', onDragOver);
             pool.addEventListener('dragleave', onDragLeave);
             pool.addEventListener('drop', onDropUnassigned);
+
+            const { data } = await supabaseClient.auth.getSession();
+            if (data.session?.user) {
+                setCurrentUser(data.session.user);
+                hideAuthGate();
+                await refreshAppData();
+            } else {
+                showAuthGate();
+            }
         }
 
         async function loadCourses() {
@@ -1874,6 +2123,7 @@
 
                 if (error) throw error;
                 courses = data || [];
+                syncMyStudyCoursesFromIds();
                 renderCourses();
                 renderTopCourses();
             } catch (error) {
@@ -2155,7 +2405,7 @@
 
         supabaseClient
             .channel('courses')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, () => loadCourses())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, async () => { if (currentUser) await loadCourses(); })
             .subscribe();
     </script>
 </body>
