@@ -854,13 +854,20 @@
         tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
         tbody tr:last-child { border-bottom: none; }
 
-        td {
-            padding: 18px 20px;
-            font-size: 14px;
-            color: var(--text-primary);
-            vertical-align: top;
-            border-bottom: 1px solid var(--glass-border);
-        }
+          td {
+        padding: 18px 20px;
+        font-size: 14px;
+        color: var(--text-primary);
+        vertical-align: top;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    
+    td:nth-child(10) {
+        min-width: 320px;
+        max-width: 450px;
+        white-space: normal;
+        line-height: 1.6;
+    }
 
         tbody tr:last-child td { border-bottom: none; }
 
@@ -2421,7 +2428,7 @@
                             <td>${course.effort ? course.effort + ' h' : '—'}</td>
                             <td>${escapeHtml(course.exam) || '—'}</td>
                             <td>${course.rating ? `<span class="rating">${course.rating.toFixed(1)} ⭐</span>` : '—'}</td>
-                            <td style="max-width: 300px; white-space: normal; color: var(--text-secondary);">${escapeHtml(course.tips) || '—'}</td>
+                            <td style="color: var(--text-secondary);">${escapeHtml(course.tips) || '—'}</td>
                             <td>
                                 <div class="actions">
                                     <button class="icon-btn add-to-study ${isInStudy ? 'added' : ''}" onclick="addToMyStudy(${course.id})" title="${isInStudy ? 'Bereits hinzugefügt' : 'Zu Mein Studium hinzufügen'}">${isInStudy ? '✓' : '🎓'}</button>
