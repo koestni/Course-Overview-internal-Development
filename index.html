@@ -817,14 +817,15 @@
         .btn-primary:hover::before { left: 100%; }
 
         /* Table */
-        .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
+           .table-container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
 
         table {
             width: 100%;
@@ -1301,7 +1302,7 @@
             .stat-value { font-size: 28px; }
 
             .table-container { overflow-x: auto; border-radius: 12px; }
-            table { min-width: 1400px; }
+            table { min-width: 900px; }
 
             .controls { flex-direction: column; align-items: stretch; gap: 12px; }
             .search-bar { width: 100%; min-width: unset; }
