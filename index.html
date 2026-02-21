@@ -501,7 +501,7 @@
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
-
+        
         .top-course-card {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
             border: 1px solid var(--glass-border);
@@ -512,6 +512,7 @@
             overflow: hidden;
             will-change: transform;
             transform: translateZ(0);
+            user-select: text;
         }
 
         .top-course-card::before {
