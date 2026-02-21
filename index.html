@@ -2148,20 +2148,23 @@
             pool.addEventListener('drop', onDropUnassigned);
         }
 
-        async function loadCourses() {
+             async function loadCourses() {
             try {
+                console.log('loadCourses() gestartet, User:', currentUser?.email);
                 const { data, error } = await supabaseClient
                     .from('courses')
                     .select('*')
                     .order('created_at', { ascending: false });
-
+        
+                console.log('Supabase Antwort:', { data, error });
                 if (error) throw error;
                 courses = data || [];
+                console.log('Kurse geladen:', courses.length);
                 syncMyStudyCoursesFromIds();
                 renderCourses();
                 renderTopCourses();
             } catch (error) {
-                console.error('Error loading courses:', error);
+                console.error('Fehler in loadCourses:', error);
             }
         }
 
