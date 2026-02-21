@@ -2073,10 +2073,14 @@
             }
         }
 
-        async function refreshAppData() {
+               async function refreshAppData() {
             await loadAdminStatus();
             await loadCourses();
-            await loadMyStudy();
+            try {
+                await loadMyStudy();
+            } catch (err) {
+                console.error('Fehler beim Laden von Mein Studium:', err);
+            }
             renderCourses();
             renderMyStudy();
         }
@@ -2133,23 +2137,14 @@
         }
 
         // ── Init ──
-        async function init() {
+              async function init() {
             setupSearch();
             setupAuth();
-
+        
             const pool = document.getElementById('unassignedPool');
             pool.addEventListener('dragover', onDragOver);
             pool.addEventListener('dragleave', onDragLeave);
             pool.addEventListener('drop', onDropUnassigned);
-
-            const { data } = await supabaseClient.auth.getSession();
-            if (data.session?.user) {
-                setCurrentUser(data.session.user);
-                hideAuthGate();
-                await refreshAppData();
-            } else {
-                showAuthGate();
-            }
         }
 
         async function loadCourses() {
