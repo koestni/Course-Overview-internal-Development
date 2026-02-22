@@ -1390,7 +1390,28 @@
             font-size: 13px;
             color: var(--text-secondary);
         }
-
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
+            color: white;
+            padding: 14px 22px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
     </style>
     <base target="_blank">
 </head>
@@ -1806,7 +1827,7 @@
             const course = courses.find(c => c.id === courseId);
             if (!course) return;
             if (myStudyCourseIds.includes(courseId)) {
-                alert('Dieser Kurs ist bereits in deinem Studium!');
+                showToast('Dieser Kurs ist bereits in deinem Studium!');
                 return;
             }
 
@@ -2113,7 +2134,7 @@
                     if (error) return setAuthMessage(error.message, true);
                     setAuthMessage('Login erfolgreich.');
                 } else {
-                    const EMAIL_REDIRECT_TO = "https://koestni.github.io/Course-Overview-internal-Development/";
+                    const EMAIL_REDIRECT_TO = "https://course-overview-iota.vercel.app/";
                 
                     const { error } = await supabaseClient.auth.signUp({
                         email,
@@ -2123,10 +2144,9 @@
                         }
                     });
 
-    if (error) return setAuthMessage(error.message, true);
-
-    setAuthMessage('Registrierung erfolgreich. Bitte E-Mail bestätigen und dann einloggen.');
-}
+                    if (error) return setAuthMessage(error.message, true);
+                    setAuthMessage('Registrierung erfolgreich. Bitte E-Mail bestätigen und dann einloggen.');
+                }
             });
 
             supabaseClient.auth.onAuthStateChange(async (_, session) => {
@@ -2450,7 +2470,26 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
-        }
+            }
+    
+            function showToast(message) {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+    
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+    
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => toast.classList.add('show'));
+        });
+    
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
 
         // Modal close handlers
         document.getElementById('courseModal').addEventListener('click', function(e) {
