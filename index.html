@@ -633,58 +633,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            padding: 25px;
-            border-radius: 12px;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 500;
-        }
-
         /* Controls */
         .controls {
             display: flex;
@@ -1427,7 +1375,134 @@
             transform: translateY(0);
             opacity: 1;
         }
-        
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.95) 100%);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-spinner {
+            width: 52px;
+            height: 52px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Confirm Modal */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 4000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .confirm-modal.active { display: flex; }
+
+        .confirm-content {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .confirm-message {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Sortierbare Spalten-Header */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th.sortable:hover { color: var(--text-primary); }
+
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.35;
+            font-size: 11px;
+        }
+
+        th.sortable.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: var(--accent-blue);
+        }
+
+        th.sortable.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: var(--accent-blue);
+        }
+
+        /* ECTS-Warnung in Semesterblöcken */
+        .ects-warning { color: var(--warning) !important; font-weight: 700; }
+        .ects-danger  { color: var(--danger)  !important; font-weight: 700; }
+
+        /* Filter-Reihen */
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-row-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
     </style>
     <base target="_blank">
 </head>
@@ -1497,19 +1572,31 @@
                     </div>
                     <input type="text" id="searchInput" placeholder="Kurse durchsuchen...">
                 </div>
-                <div class="filter-group">
-                    <button class="filter-btn active" onclick="filterDifficulty('alle')" data-filter="alle">Alle</button>
-                    <button class="filter-btn" onclick="filterDifficulty('leicht')" data-filter="leicht">Leicht</button>
-                    <button class="filter-btn" onclick="filterDifficulty('mittel')" data-filter="mittel">Mittel</button>
-                    <button class="filter-btn" onclick="filterDifficulty('schwer')" data-filter="schwer">Schwer</button>
-                    <select class="filter-select" id="ratingFilter" onchange="filterRating(this.value)">
-                        <option value="alle">⭐ Alle Bewertungen</option>
-                        <option value="4.5">⭐ 4.5+ Sterne</option>
-                        <option value="4.0">⭐ 4+ Sterne</option>
-                        <option value="3.0">⭐ 3+ Sterne</option>
-                        <option value="bewertet">⭐ Nur bewertet</option>
-                        <option value="nicht-bewertet">⭐ Nicht bewertet</option>
-                    </select>
+                <div class="filter-group" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                    <div class="filter-row">
+                        <span class="filter-row-label">Schwierigkeit:</span>
+                        <button class="filter-btn active" onclick="filterDifficulty('alle')" data-filter="alle">Alle</button>
+                        <button class="filter-btn" onclick="filterDifficulty('leicht')" data-filter="leicht">Leicht</button>
+                        <button class="filter-btn" onclick="filterDifficulty('mittel')" data-filter="mittel">Mittel</button>
+                        <button class="filter-btn" onclick="filterDifficulty('schwer')" data-filter="schwer">Schwer</button>
+                    </div>
+                    <div class="filter-row">
+                        <span class="filter-row-label">Semester:</span>
+                        <button class="filter-btn semester-filter-btn active" onclick="filterSemester('alle')" data-sem-filter="alle">Alle</button>
+                        <button class="filter-btn semester-filter-btn" onclick="filterSemester('WS')" data-sem-filter="WS">WS</button>
+                        <button class="filter-btn semester-filter-btn" onclick="filterSemester('SS')" data-sem-filter="SS">SS</button>
+                        <select class="filter-select" id="fachbereichFilter" onchange="filterFachbereich(this.value)">
+                            <option value="alle">🏛️ Alle Fachbereiche</option>
+                        </select>
+                        <select class="filter-select" id="ratingFilter" onchange="filterRating(this.value)">
+                            <option value="alle">⭐ Alle Bewertungen</option>
+                            <option value="4.5">⭐ 4.5+ Sterne</option>
+                            <option value="4.0">⭐ 4+ Sterne</option>
+                            <option value="3.0">⭐ 3+ Sterne</option>
+                            <option value="bewertet">⭐ Nur bewertet</option>
+                            <option value="nicht-bewertet">⭐ Nicht bewertet</option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn-primary" onclick="openModal()">+ Kurs hinzufügen</button>
             </div>
@@ -1518,15 +1605,15 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Kursname</th>
-                            <th>Fachbereich</th>
-                            <th>ECTS</th>
-                            <th>Semester</th>
-                            <th>Format</th>
-                            <th>Schwierigkeit</th>
-                            <th>Aufwand</th>
+                            <th class="sortable" data-sort="name" onclick="toggleSort('name')">Kursname</th>
+                            <th class="sortable" data-sort="fachbereich" onclick="toggleSort('fachbereich')">Fachbereich</th>
+                            <th class="sortable" data-sort="ects" onclick="toggleSort('ects')">ECTS</th>
+                            <th class="sortable" data-sort="semester" onclick="toggleSort('semester')">Semester</th>
+                            <th class="sortable" data-sort="format" onclick="toggleSort('format')">Format</th>
+                            <th class="sortable" data-sort="difficulty" onclick="toggleSort('difficulty')">Schwierigkeit</th>
+                            <th class="sortable" data-sort="effort" onclick="toggleSort('effort')">Aufwand</th>
                             <th>Prüfung</th>
-                            <th>Bewertung</th>
+                            <th class="sortable" data-sort="rating" onclick="toggleSort('rating')">Bewertung</th>
                             <th>Tipps</th>
                             <th></th>
                         </tr>
@@ -1715,6 +1802,24 @@
 
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Kurse werden geladen...</div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-title" id="confirmTitle">Bestätigung</div>
+            <div class="confirm-message" id="confirmMessage"></div>
+            <div class="confirm-actions">
+                <button class="btn-secondary" id="confirmCancelBtn">Abbrechen</button>
+                <button class="btn-primary" id="confirmOkBtn">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://jwwfrbodwalnygcawhmv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_eYi4vhmS-EGg9iEZAxc8Gw_jttyVG_F';
@@ -1726,6 +1831,9 @@
         let semesters = []; // { id, name, courseIds: [] }
         let currentFilter = 'alle';
         let currentRatingFilter = 'alle';
+        let currentFachbereichFilter = 'alle';
+        let currentSemesterFilter = 'alle';
+        let sortState = { column: null, direction: 'asc' };
         let editingCourseId = null;
         let searchTimeout = null;
         let draggedCourseId = null;
@@ -1872,7 +1980,7 @@
                 .eq('course_id', courseId);
 
             if (error) {
-                alert('Fehler beim Entfernen: ' + error.message);
+                showToast('❌ Fehler beim Entfernen: ' + error.message, 'error');
                 return;
             }
 
@@ -1901,7 +2009,10 @@
         async function createSemester() {
             if (!currentUser) return;
             const name = document.getElementById('semesterNameInput').value.trim();
-            if (!name) { alert('Bitte gib einen Namen ein.'); return; }
+            if (!name) {
+                showToast('⚠️ Bitte gib einen Semesternamen ein.', 'error');
+                return;
+            }
 
             const { data, error } = await supabaseClient
                 .from('user_semesters')
@@ -1910,7 +2021,7 @@
                 .single();
 
             if (error) {
-                alert('Fehler beim Anlegen: ' + error.message);
+                showToast('❌ Fehler beim Anlegen: ' + error.message, 'error');
                 return;
             }
 
@@ -1921,7 +2032,8 @@
 
         async function deleteSemester(semId) {
             if (!currentUser) return;
-            if (!confirm('Semester löschen? Kurse werden wieder als "nicht zugeordnet" angezeigt.')) return;
+            const ok = await showConfirm('Semester löschen? Kurse werden wieder als "nicht zugeordnet" angezeigt.', 'Semester löschen');
+            if (!ok) return;
 
             const { error } = await supabaseClient
                 .from('user_semesters')
@@ -1930,7 +2042,7 @@
                 .eq('user_id', currentUser.id);
 
             if (error) {
-                alert('Fehler beim Löschen: ' + error.message);
+                showToast('❌ Fehler beim Löschen: ' + error.message, 'error');
                 return;
             }
 
@@ -2032,7 +2144,7 @@
                                         Kurse: <span class="semester-block-stat-value">${stats.count}</span>
                                     </div>
                                     <div class="semester-block-stat">
-                                        ECTS: <span class="semester-block-stat-value">${stats.totalECTS}</span>
+                                        ECTS: <span class="semester-block-stat-value ${ectsClass(stats.totalECTS)}" title="${stats.totalECTS > 28 ? 'Hohe Semesterlast!' : ''}">${stats.totalECTS}${stats.totalECTS > 28 ? ' ⚠️' : ''}</span>
                                     </div>
                                     <div class="semester-block-stat">
                                         Aufwand pro Woche: <span class="semester-block-stat-value">${stats.totalEffort}h</span>
@@ -2112,11 +2224,12 @@
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
 
+            const tab = evt.currentTarget;
             if (view === 'overview') {
-                evt.target.classList.add('active');
+                tab.classList.add('active');
                 document.getElementById('overviewSection').classList.add('active');
             } else if (view === 'mystudy') {
-                evt.target.classList.add('active');
+                tab.classList.add('active');
                 document.getElementById('myStudySection').classList.add('active');
                 renderMyStudy();
             }
@@ -2206,23 +2319,26 @@
                     setupAuth();
                 }
 
-             async function loadCourses() {
+        async function loadCourses() {
+            const overlay = document.getElementById('loadingOverlay');
             try {
-                console.log('loadCourses() gestartet, User:', currentUser?.email);
+                overlay.style.display = 'flex';
                 const { data, error } = await supabaseClient
                     .from('courses')
                     .select('*')
                     .order('created_at', { ascending: false });
-        
-                console.log('Supabase Antwort:', { data, error });
+
                 if (error) throw error;
                 courses = data || [];
-                console.log('Kurse geladen:', courses.length);
                 syncMyStudyCoursesFromIds();
+                updateFachbereichDropdown();
                 renderCourses();
                 renderTopCourses();
             } catch (error) {
                 console.error('Fehler in loadCourses:', error);
+                showToast('❌ Fehler beim Laden der Kurse', 'error');
+            } finally {
+                overlay.style.display = 'none';
             }
         }
 
@@ -2311,7 +2427,7 @@
             if (courseId) {
                 const course = courses.find(c => c.id === courseId);
                 if (!canManageCourse(course)) {
-                    alert('Du kannst nur deine eigenen Kurse bearbeiten.');
+                    showToast('⚠️ Du kannst nur deine eigenen Kurse bearbeiten.', 'error');
                     return;
                 }
 
@@ -2371,7 +2487,7 @@
                 if (editingCourseId) {
                     const originalCourse = courses.find(c => c.id === editingCourseId);
                     if (!canManageCourse(originalCourse)) {
-                        alert('Keine Berechtigung zum Bearbeiten dieses Kurses.');
+                        showToast('⚠️ Keine Berechtigung zum Bearbeiten dieses Kurses.', 'error');
                         return;
                     }
                     const { data, error } = await supabaseClient.from('courses').update(baseCourseData).eq('id', editingCourseId).select();
@@ -2384,31 +2500,36 @@
                     if (error) throw error;
                     if (data && data[0]) courses.unshift(data[0]);
                 }
+                updateFachbereichDropdown();
                 renderCourses();
                 renderTopCourses();
                 closeModal();
+                showToast('✅ Kurs erfolgreich gespeichert!');
             } catch (error) {
                 console.error('Error saving course:', error);
-                alert('Fehler beim Speichern: ' + error.message);
+                showToast('❌ Fehler beim Speichern: ' + error.message, 'error');
             }
         });
 
         async function deleteCourse(id) {
             const course = courses.find(c => c.id === id);
             if (!canManageCourse(course)) {
-                alert('Keine Berechtigung zum Löschen dieses Kurses.');
+                showToast('⚠️ Keine Berechtigung zum Löschen dieses Kurses.', 'error');
                 return;
             }
-            if (!confirm('Möchtest du diesen Kurs wirklich löschen?')) return;
+            const ok = await showConfirm('Möchtest du diesen Kurs wirklich löschen?', 'Kurs löschen');
+            if (!ok) return;
             try {
                 const { error } = await supabaseClient.from('courses').delete().eq('id', id);
                 if (error) throw error;
                 courses = courses.filter(c => c.id !== id);
+                updateFachbereichDropdown();
                 renderCourses();
                 renderTopCourses();
+                showToast('🗑️ Kurs gelöscht.');
             } catch (error) {
                 console.error('Error deleting course:', error);
-                alert('Fehler beim Löschen: ' + error.message);
+                showToast('❌ Fehler beim Löschen: ' + error.message, 'error');
             }
         }
 
@@ -2438,6 +2559,18 @@
 
             if (currentFilter !== 'alle') filtered = filtered.filter(c => c.difficulty === currentFilter);
 
+            if (currentFachbereichFilter !== 'alle') {
+                filtered = filtered.filter(c => c.fachbereich === currentFachbereichFilter);
+            }
+
+            if (currentSemesterFilter !== 'alle') {
+                filtered = filtered.filter(c => {
+                    if (currentSemesterFilter === 'WS') return c.semester === 'WS' || c.semester === 'WS/SS';
+                    if (currentSemesterFilter === 'SS') return c.semester === 'SS' || c.semester === 'WS/SS';
+                    return true;
+                });
+            }
+
             if (currentRatingFilter !== 'alle') {
                 switch (currentRatingFilter) {
                     case '4.5': filtered = filtered.filter(c => c.rating && c.rating >= 4.5); break;
@@ -2455,6 +2588,18 @@
                     (c.tips && c.tips.toLowerCase().includes(searchTerm)) ||
                     (c.created_by && c.created_by.toLowerCase().includes(searchTerm))
                 );
+            }
+
+            if (sortState.column) {
+                filtered = [...filtered].sort((a, b) => {
+                    let aVal = a[sortState.column] ?? '';
+                    let bVal = b[sortState.column] ?? '';
+                    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                    if (aVal < bVal) return sortState.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortState.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
             }
 
             const tbody = document.getElementById('courseTable');
@@ -2497,26 +2642,100 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast' + (type === 'error' ? ' error' : '');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => toast.classList.add('show'));
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ── Custom Confirm Dialog ──
+        function showConfirm(message, title = 'Bestätigung') {
+            return new Promise(resolve => {
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmMessage').textContent = message;
+                const modal = document.getElementById('confirmModal');
+                modal.classList.add('active');
+
+                const okBtn = document.getElementById('confirmOkBtn');
+                const cancelBtn = document.getElementById('confirmCancelBtn');
+
+                function cleanup(result) {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    resolve(result);
+                }
+
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+            });
+        }
+
+        // ── Sortierung ──
+        function toggleSort(column) {
+            if (sortState.column === column) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.column = column;
+                sortState.direction = 'asc';
             }
-    
-            function showToast(message) {
-        const existing = document.querySelector('.toast');
-        if (existing) existing.remove();
-    
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-    
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => toast.classList.add('show'));
-        });
-    
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === column) {
+                    th.classList.add(sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+            renderCourses();
+        }
+
+        // ── Fachbereich-Dropdown aktualisieren ──
+        function updateFachbereichDropdown() {
+            const fachbereiche = [...new Set(courses.map(c => c.fachbereich).filter(Boolean))].sort();
+            const select = document.getElementById('fachbereichFilter');
+            const current = select.value;
+            select.innerHTML = `<option value="alle">🏛️ Alle Fachbereiche</option>` +
+                fachbereiche.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+            if (fachbereiche.includes(current)) select.value = current;
+        }
+
+        function filterFachbereich(value) {
+            currentFachbereichFilter = value;
+            renderCourses();
+        }
+
+        // ── Semester-Filter (WS/SS) ──
+        function filterSemester(sem) {
+            currentSemesterFilter = sem;
+            document.querySelectorAll('.semester-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.semFilter === sem);
+            });
+            renderCourses();
+        }
+
+        // ── ECTS-Klasse für Warnfarben ──
+        function ectsClass(ects) {
+            if (ects > 35) return 'ects-danger';
+            if (ects > 28) return 'ects-warning';
+            return '';
+        }
 
         // Modal close handlers
         document.getElementById('courseModal').addEventListener('click', function(e) {
