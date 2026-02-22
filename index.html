@@ -2176,14 +2176,28 @@
 
         // ── Init ──
               async function init() {
-            setupSearch();
-            setupAuth();
-        
-            const pool = document.getElementById('unassignedPool');
-            pool.addEventListener('dragover', onDragOver);
-            pool.addEventListener('dragleave', onDragLeave);
-            pool.addEventListener('drop', onDropUnassigned);
-        }
+                setupSearch();
+                setupAuth();
+            
+                const pool = document.getElementById('unassignedPool');
+                pool.addEventListener('dragover', onDragOver);
+                pool.addEventListener('dragleave', onDragLeave);
+                pool.addEventListener('drop', onDropUnassigned);
+            
+                // Fallback: Falls onAuthStateChange nicht rechtzeitig feuert
+                setTimeout(async () => {
+                    if (!currentUser) {
+                        const { data } = await supabaseClient.auth.getSession();
+                        if (data.session?.user) {
+                            setCurrentUser(data.session.user);
+                            hideAuthGate();
+                            await refreshAppData();
+                        } else {
+                            showAuthGate();
+                        }
+                    }
+                }, 1500);
+            }
 
              async function loadCourses() {
             try {
