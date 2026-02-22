@@ -1822,30 +1822,30 @@
         }
 
         // ── Add / Remove from study ──
-        async function addToMyStudy(courseId) {
-            if (!currentUser) return;
-            const course = courses.find(c => c.id === courseId);
-            if (!course) return;
-            if (myStudyCourseIds.includes(courseId)) {
-                showToast('Dieser Kurs ist bereits in deinem Studium!');
-                return;
-            }
-
-            const { error } = await supabaseClient
-                .from('user_study_courses')
-                .insert([{ user_id: currentUser.id, course_id: courseId }]);
-
-            if (error) {
-                alert('Fehler beim Hinzufügen: ' + error.message);
-                return;
-            }
-
-            myStudyCourseIds.push(courseId);
-            syncMyStudyCoursesFromIds();
-            renderMyStudy();
-            renderCourses();
-            alert('✅ Kurs zu Mein Studium hinzugefügt!');
+          async function addToMyStudy(courseId) {
+        if (!currentUser) return;
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+        if (myStudyCourseIds.includes(courseId)) {
+            showToast('Dieser Kurs ist bereits in deinem Studium!');
+            return;
         }
+    
+        const { error } = await supabaseClient
+            .from('user_study_courses')
+            .insert([{ user_id: currentUser.id, course_id: courseId }]);
+    
+        if (error) {
+            showToast('❌ Fehler beim Hinzufügen: ' + error.message);
+            return;
+        }
+    
+        myStudyCourseIds.push(courseId);
+        syncMyStudyCoursesFromIds();
+        renderMyStudy();
+        renderCourses();
+        showToast('✅ Kurs zu Mein Studium hinzugefügt!');
+    }
 
         async function removeFromMyStudy(courseId) {
             if (!currentUser) return;
