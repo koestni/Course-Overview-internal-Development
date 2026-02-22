@@ -2,7 +2,11 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#020617">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -41,14 +45,15 @@
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, var(--primary-darker) 0%, #1e293b 50%, var(--primary-dark) 100%);
-            background-attachment: fixed;
+            background-color: var(--primary-darker);
             color: var(--text-primary);
             line-height: 1.6;
-            min-height: 100vh;
+            min-height: 100dvh;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
         }
 
         body::before {
@@ -83,6 +88,26 @@
             position: relative;
             overflow: hidden;
             transform: translateZ(0);
+        }
+
+        /* Mobile: fixed header + safe-area-inset-top */
+        @media (max-width: 768px) {
+            .header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                padding: 0;
+                padding-top: env(safe-area-inset-top);
+                margin-bottom: 0;
+            }
+            .header-content {
+                padding: 12px 16px;
+            }
+            #appRoot {
+                padding-top: calc(64px + env(safe-area-inset-top));
+            }
         }
 
         .header::before {
@@ -1260,13 +1285,18 @@
             .guide-columns { grid-template-columns: 1fr; }
         }
 
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            display: none;
+        }
+
         @media (max-width: 768px) {
-            h1 { font-size: 28px; }
-            .subtitle { font-size: 14px; }
-            .header { padding: 20px 0; margin-bottom: 20px; }
-            .header-content { flex-direction: column; align-items: flex-start; }
-            .nav-tabs { width: 100%; overflow-x: auto; }
-            .container { padding: 15px 10px; }
+            h1 { font-size: 22px; }
+            .subtitle { display: none; }
+            .header-content { flex-direction: row; align-items: center; gap: 10px; }
+            .nav-tabs { display: none; }
+            .auth-user-controls { margin-left: auto; }
+            .container { padding: 15px 10px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 
             .top-courses, .my-study-section, .guide-section {
                 border-radius: 12px; padding: 20px; margin-bottom: 20px;
@@ -1294,6 +1324,62 @@
             .modal-header { font-size: 24px; }
             .my-study-grid { grid-template-columns: 1fr; }
             .semester-courses-grid { grid-template-columns: 1fr; }
+
+            /* Toast: above bottom nav */
+            .toast {
+                bottom: calc(72px + env(safe-area-inset-bottom) + 12px);
+                right: 16px;
+                left: 16px;
+                border-radius: 12px;
+            }
+
+            /* Bottom nav visible on mobile */
+            .bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                background: rgba(2, 6, 23, 0.92);
+                backdrop-filter: blur(24px);
+                -webkit-backdrop-filter: blur(24px);
+                border-top: 1px solid var(--glass-border);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .bottom-nav-tab {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                padding: 10px 8px;
+                color: var(--text-muted);
+                cursor: pointer;
+                transition: color 0.2s;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                border: none;
+                background: none;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+            }
+
+            .bottom-nav-tab .bn-icon {
+                font-size: 22px;
+                line-height: 1;
+            }
+
+            .bottom-nav-tab.active {
+                color: var(--accent-blue);
+            }
+
+            .bottom-nav-tab.active .bn-icon {
+                filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.7));
+            }
         }
 
         @media (max-width: 480px) {
@@ -1547,6 +1633,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="bottom-nav-tab active" id="bnOverview" onclick="switchView('overview', event)">
+            <span class="bn-icon">📋</span>
+            Übersicht
+        </button>
+        <button class="bottom-nav-tab" id="bnMystudy" onclick="switchView('mystudy', event)">
+            <span class="bn-icon">🎓</span>
+            Mein Studium
+        </button>
+    </nav>
 
     <div class="container">
         <!-- Overview Section -->
@@ -2222,15 +2320,24 @@
         // ── View switching ──
         function switchView(view, evt) {
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
 
             const tab = evt.currentTarget;
+            tab.classList.add('active');
+
             if (view === 'overview') {
-                tab.classList.add('active');
                 document.getElementById('overviewSection').classList.add('active');
+                const bn = document.getElementById('bnOverview');
+                if (bn) bn.classList.add('active');
+                const nt = document.querySelector('.nav-tab[onclick*="overview"]');
+                if (nt) nt.classList.add('active');
             } else if (view === 'mystudy') {
-                tab.classList.add('active');
                 document.getElementById('myStudySection').classList.add('active');
+                const bn = document.getElementById('bnMystudy');
+                if (bn) bn.classList.add('active');
+                const nt = document.querySelector('.nav-tab[onclick*="mystudy"]');
+                if (nt) nt.classList.add('active');
                 renderMyStudy();
             }
         }
