@@ -106,7 +106,7 @@
                 padding: 12px 16px;
             }
             #appRoot {
-                padding-top: calc(64px + env(safe-area-inset-top));
+                padding-top: calc(50px + env(safe-area-inset-top));
             }
         }
 
@@ -1291,12 +1291,16 @@
         }
 
         @media (max-width: 768px) {
-            h1 { font-size: 22px; }
+            h1 { font-size: 18px; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .subtitle { display: none; }
-            .header-content { flex-direction: row; align-items: center; gap: 10px; }
+            .header-content { flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 10px; }
+            .header-text { flex: 1; min-width: 0; }
             .nav-tabs { display: none; }
-            .auth-user-controls { margin-left: auto; }
-            .container { padding: 15px 10px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+            /* Logout: kompakt; Email-Badge: ausgeblendet */
+            .auth-user-controls { margin-left: 0; flex-shrink: 0; }
+            .auth-user-badge { display: none; }
+            .auth-user-controls .btn-secondary { padding: 7px 13px; font-size: 13px; }
+            .container { padding: 12px 12px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 
             .top-courses, .my-study-section, .guide-section {
                 border-radius: 12px; padding: 20px; margin-bottom: 20px;
