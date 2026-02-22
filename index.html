@@ -161,6 +161,16 @@
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
 
+        /* Restore natural emoji colors when parent overrides with CSS color/fill */
+        .emoji-icon {
+            display: inline-block;
+            color: initial;
+            -webkit-text-fill-color: initial;
+            background: none;
+            -webkit-background-clip: initial;
+            background-clip: initial;
+        }
+
         /* My Study Section */
         .my-study-section {
             background: var(--glass-bg);
@@ -1453,8 +1463,8 @@
                 <p class="subtitle">Entdecke und bewerte Kurse der Technischen Universität München</p>
             </div>
             <div class="nav-tabs">
-                <div class="nav-tab active" onclick="switchView('overview', event)">📋 Übersicht</div>
-                <div class="nav-tab" onclick="switchView('mystudy', event)">🎓 Mein Studium</div>
+                <div class="nav-tab active" onclick="switchView('overview', event)"><span class="emoji-icon">📋</span> Übersicht</div>
+                <div class="nav-tab" onclick="switchView('mystudy', event)"><span class="emoji-icon">🎓</span> Mein Studium</div>
             </div>
             <div class="auth-user-controls">
                 <div class="auth-user-badge" id="userEmailBadge">Nicht angemeldet</div>
@@ -1526,7 +1536,7 @@
             </div>
 
             <div class="guide-section">
-                <div class="guide-title">💡 Anleitung zur Nutzung</div>
+                <div class="guide-title"><span class="emoji-icon">💡</span> Anleitung zur Nutzung</div>
                 <h3>So verwendest du die Kursübersicht:</h3>
                 <div class="usage-steps">
                     <div class="usage-step">
@@ -1569,7 +1579,7 @@
         <div id="myStudySection" class="view-section">
             <div class="my-study-section">
                 <div class="my-study-header">
-                    <div class="my-study-title">🎓 Mein Studium</div>
+                    <div class="my-study-title"><span class="emoji-icon">🎓</span> Mein Studium</div>
                     <div class="my-study-stats">
                         <div class="my-study-stat">
                             <span>Kurse:</span>
