@@ -1459,6 +1459,7 @@
             <div class="auth-user-controls">
                 <div class="auth-user-badge" id="userEmailBadge">Nicht angemeldet</div>
                 <button class="btn-secondary" onclick="logout()">Logout</button>
+                <button class="btn-secondary" onclick="forceLogout()" style="background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #fca5a5;">🔄 Reset</button>
             </div>
         </div>
     </div>
@@ -2127,6 +2128,13 @@
         async function logout() {
             await supabaseClient.auth.signOut();
         }
+        async function forceLogout() {
+            await supabaseClient.auth.signOut();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = window.location.href;
+        }
+        
 
         function setupAuth() {
             document.getElementById('authForm').addEventListener('submit', async function(e) {
