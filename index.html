@@ -2499,9 +2499,11 @@
                     showAuthGate();
                     return;
                 }
-                // INITIAL_SESSION wird direkt in init() behandelt – hier überspringen,
-                // damit kein automatischer Login während des Recovery-Flows passiert
-                if (event === 'INITIAL_SESSION') {
+                // INITIAL_SESSION nur im Recovery-Flow überspringen:
+                // PASSWORD_RECOVERY feuert zuerst (setzt authMode auf 'resetPassword'),
+                // danach feuert INITIAL_SESSION – ohne diese Prüfung würde der User
+                // automatisch eingeloggt, obwohl er sein Passwort noch ändern soll.
+                if (event === 'INITIAL_SESSION' && authMode === 'resetPassword') {
                     return;
                 }
                 if (session?.user) {
