@@ -1435,6 +1435,18 @@
         }
         .auth-message { min-height: 22px; font-size: 13px; color: var(--text-secondary); margin-top: 10px; }
         .auth-message.error { color: #fca5a5; }
+        .auth-message.success { color: #6ee7b7; }
+        .auth-link-btn {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 0;
+            text-decoration: underline;
+            opacity: 0.85;
+        }
+        .auth-link-btn:hover { opacity: 1; }
         .auth-user-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .auth-user-badge {
             border: 1px solid var(--glass-border);
@@ -1599,22 +1611,32 @@
 <body>
     <div id="authGate" class="auth-gate">
         <div class="auth-card">
-            <div class="auth-title">🔐 Anmeldung erforderlich</div>
-            <div class="auth-subtitle">Melde dich an, um die Kursübersicht zu sehen und dein persönliches Studium zu speichern.</div>
-            <div class="auth-tabs">
+            <div class="auth-title" id="authTitle">🔐 Anmeldung erforderlich</div>
+            <div class="auth-subtitle" id="authSubtitle">Melde dich an, um die Kursübersicht zu sehen und dein persönliches Studium zu speichern.</div>
+            <div class="auth-tabs" id="authTabs">
                 <button class="auth-tab active" id="loginTab" onclick="switchAuthMode('login')">Login</button>
                 <button class="auth-tab" id="registerTab" onclick="switchAuthMode('register')">Registrieren</button>
             </div>
             <form id="authForm">
-                <div class="form-group">
+                <div class="form-group" id="emailGroup">
                     <label class="form-label">E-Mail</label>
                     <input class="form-input" type="email" id="authEmail" required placeholder="name@tum.de">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Passwort</label>
+                <div class="form-group" id="passwordGroup">
+                    <label class="form-label" id="passwordLabel">Passwort</label>
                     <input class="form-input" type="password" id="authPassword" minlength="6" required placeholder="Mindestens 6 Zeichen">
                 </div>
+                <div class="form-group" id="confirmPasswordGroup" style="display:none;">
+                    <label class="form-label">Passwort bestätigen</label>
+                    <input class="form-input" type="password" id="authConfirmPassword" minlength="6" placeholder="Passwort wiederholen">
+                </div>
                 <button class="btn-primary" type="submit" id="authSubmitBtn" style="width:100%;">Einloggen</button>
+                <div id="forgotPasswordLink" style="text-align:center; margin-top:10px;">
+                    <button type="button" class="auth-link-btn" onclick="switchAuthMode('forgotPassword')">Passwort vergessen?</button>
+                </div>
+                <div id="backToLoginLink" style="text-align:center; margin-top:10px; display:none;">
+                    <button type="button" class="auth-link-btn" onclick="switchAuthMode('login')">Zurück zum Login</button>
+                </div>
                 <div class="auth-message" id="authMessage"></div>
             </form>
         </div>
@@ -1955,9 +1977,67 @@
 
         function switchAuthMode(mode) {
             authMode = mode;
-            document.getElementById('loginTab').classList.toggle('active', mode === 'login');
-            document.getElementById('registerTab').classList.toggle('active', mode === 'register');
-            document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Einloggen' : 'Konto erstellen';
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const authTabs = document.getElementById('authTabs');
+            const emailGroup = document.getElementById('emailGroup');
+            const passwordGroup = document.getElementById('passwordGroup');
+            const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+            const passwordLabel = document.getElementById('passwordLabel');
+            const passwordInput = document.getElementById('authPassword');
+            const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+            const backToLoginLink = document.getElementById('backToLoginLink');
+            const authTitle = document.getElementById('authTitle');
+            const authSubtitle = document.getElementById('authSubtitle');
+
+            // Reset common state
+            emailGroup.style.display = '';
+            confirmPasswordGroup.style.display = 'none';
+            forgotPasswordLink.style.display = 'none';
+            backToLoginLink.style.display = 'none';
+            authTabs.style.display = 'flex';
+            passwordInput.placeholder = 'Mindestens 6 Zeichen';
+            passwordLabel.textContent = 'Passwort';
+            authTitle.textContent = '🔐 Anmeldung erforderlich';
+            authSubtitle.textContent = 'Melde dich an, um die Kursübersicht zu sehen und dein persönliches Studium zu speichern.';
+
+            if (mode === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                passwordGroup.style.display = '';
+                passwordInput.required = true;
+                forgotPasswordLink.style.display = '';
+                document.getElementById('authSubmitBtn').textContent = 'Einloggen';
+            } else if (mode === 'register') {
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                passwordGroup.style.display = '';
+                passwordInput.required = true;
+                document.getElementById('authSubmitBtn').textContent = 'Konto erstellen';
+            } else if (mode === 'forgotPassword') {
+                loginTab.classList.remove('active');
+                registerTab.classList.remove('active');
+                authTabs.style.display = 'none';
+                passwordGroup.style.display = 'none';
+                passwordInput.required = false;
+                backToLoginLink.style.display = '';
+                document.getElementById('authSubmitBtn').textContent = 'Reset-Link senden';
+                authTitle.textContent = '🔑 Passwort zurücksetzen';
+                authSubtitle.textContent = 'Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen deines Passworts.';
+            } else if (mode === 'resetPassword') {
+                loginTab.classList.remove('active');
+                registerTab.classList.remove('active');
+                authTabs.style.display = 'none';
+                emailGroup.style.display = 'none';
+                passwordGroup.style.display = '';
+                passwordInput.required = true;
+                passwordInput.placeholder = 'Neues Passwort (min. 6 Zeichen)';
+                passwordLabel.textContent = 'Neues Passwort';
+                confirmPasswordGroup.style.display = '';
+                document.getElementById('authSubmitBtn').textContent = 'Passwort aktualisieren';
+                authTitle.textContent = '🔑 Neues Passwort setzen';
+                authSubtitle.textContent = 'Gib dein neues Passwort ein. Du wirst danach automatisch eingeloggt.';
+            }
             setAuthMessage('');
         }
 
@@ -2377,9 +2457,29 @@
                     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) return setAuthMessage(error.message, true);
                     setAuthMessage('Login erfolgreich.');
+                } else if (authMode === 'forgotPassword') {
+                    const EMAIL_REDIRECT_TO = "https://course-overview-iota.vercel.app/";
+                    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                        redirectTo: EMAIL_REDIRECT_TO
+                    });
+                    if (error) return setAuthMessage(error.message, true);
+                    const msg = document.getElementById('authMessage');
+                    msg.textContent = 'Reset-Link gesendet! Bitte überprüfe dein E-Mail-Postfach und klicke auf den Link.';
+                    msg.classList.remove('error');
+                    msg.classList.add('success');
+                } else if (authMode === 'resetPassword') {
+                    const newPassword = document.getElementById('authPassword').value;
+                    const confirmPassword = document.getElementById('authConfirmPassword').value;
+                    if (newPassword !== confirmPassword) return setAuthMessage('Die Passwörter stimmen nicht überein.', true);
+                    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                    if (error) return setAuthMessage(error.message, true);
+                    const msg = document.getElementById('authMessage');
+                    msg.textContent = 'Passwort erfolgreich geändert! Du wirst jetzt eingeloggt.';
+                    msg.classList.remove('error');
+                    msg.classList.add('success');
                 } else {
                     const EMAIL_REDIRECT_TO = "https://course-overview-iota.vercel.app/";
-                
+
                     const { error } = await supabaseClient.auth.signUp({
                         email,
                         password,
@@ -2393,7 +2493,12 @@
                 }
             });
 
-            supabaseClient.auth.onAuthStateChange(async (_, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    switchAuthMode('resetPassword');
+                    showAuthGate();
+                    return;
+                }
                 if (session?.user) {
                     setCurrentUser(session.user);
                     hideAuthGate();
@@ -2421,17 +2526,25 @@
                     pool.addEventListener('dragleave', onDragLeave);
                     pool.addEventListener('drop', onDropUnassigned);
                 
+                    // Check for password recovery flow (URL hash contains type=recovery)
+                    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+                    const isPasswordRecovery = hashParams.get('type') === 'recovery';
+
                     // Erst Session prüfen, dann Auth-Listener starten
                     const { data } = await supabaseClient.auth.getSession();
-                    if (data.session?.user) {
+                    if (isPasswordRecovery) {
+                        showAuthGate();
+                        setupAuth();
+                        switchAuthMode('resetPassword');
+                    } else if (data.session?.user) {
                         setCurrentUser(data.session.user);
                         hideAuthGate();
                         await refreshAppData();
+                        setupAuth();
                     } else {
                         showAuthGate();
+                        setupAuth();
                     }
-                
-                    setupAuth();
                 }
 
         async function loadCourses() {
