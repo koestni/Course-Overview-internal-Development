@@ -2499,6 +2499,11 @@
                     showAuthGate();
                     return;
                 }
+                // INITIAL_SESSION wird direkt in init() behandelt – hier überspringen,
+                // damit kein automatischer Login während des Recovery-Flows passiert
+                if (event === 'INITIAL_SESSION') {
+                    return;
+                }
                 if (session?.user) {
                     setCurrentUser(session.user);
                     hideAuthGate();
@@ -2526,24 +2531,23 @@
                     pool.addEventListener('dragleave', onDragLeave);
                     pool.addEventListener('drop', onDropUnassigned);
                 
-                    // Check for password recovery flow (URL hash contains type=recovery)
-                    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-                    const isPasswordRecovery = hashParams.get('type') === 'recovery';
+                    // Auth-Listener ZUERST aufsetzen (vor dem ersten await),
+                    // damit das PASSWORD_RECOVERY-Event nicht verpasst wird.
+                    // Supabase feuert PASSWORD_RECOVERY während getSession() intern
+                    // den Recovery-Code austauscht – der Listener muss daher schon aktiv sein.
+                    setupAuth();
 
-                    // Erst Session prüfen, dann Auth-Listener starten
+                    // Session laden – onAuthStateChange hat ggf. bereits authMode auf
+                    // 'resetPassword' gesetzt, falls ein Recovery-Token in der URL war.
                     const { data } = await supabaseClient.auth.getSession();
-                    if (isPasswordRecovery) {
-                        showAuthGate();
-                        setupAuth();
-                        switchAuthMode('resetPassword');
-                    } else if (data.session?.user) {
-                        setCurrentUser(data.session.user);
-                        hideAuthGate();
-                        await refreshAppData();
-                        setupAuth();
-                    } else {
-                        showAuthGate();
-                        setupAuth();
+                    if (authMode !== 'resetPassword') {
+                        if (data.session?.user) {
+                            setCurrentUser(data.session.user);
+                            hideAuthGate();
+                            await refreshAppData();
+                        } else {
+                            showAuthGate();
+                        }
                     }
                 }
 
