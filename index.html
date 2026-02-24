@@ -1691,6 +1691,16 @@
                             <option value="bewertet">⭐ Nur bewertet</option>
                             <option value="nicht-bewertet">⭐ Nicht bewertet</option>
                         </select>
+                        <select class="filter-select" id="formatFilter" onchange="filterFormat(this.value)">
+                            <option value="alle">📋 Alle Formate</option>
+                            <option value="Vorlesung">Vorlesung</option>
+                            <option value="Seminar">Seminar</option>
+                            <option value="Praktikum">Praktikum</option>
+                            <option value="Projekt">Projekt</option>
+                            <option value="Vorlesung + Übung">Vorlesung + Übung</option>
+                            <option value="Vorlesung + Praktikum">Vorlesung + Praktikum</option>
+                            <option value="Advanced Seminar">Advanced Seminar</option>
+                        </select>
                     </div>
                 </div>
                 <button class="btn-primary" onclick="openModal()">+ Kurs hinzufügen</button>
@@ -1843,6 +1853,7 @@
                             <option value="Projekt">Projekt</option>
                             <option value="Vorlesung + Übung">Vorlesung + Übung</option>
                             <option value="Vorlesung + Praktikum">Vorlesung + Praktikum</option>
+                            <option value="Advanced Seminar">Advanced Seminar</option>
                         </select>
                     </div>
                 </div>
@@ -1927,6 +1938,7 @@
         let currentRatingFilter = 'alle';
         let currentFachbereichFilter = 'alle';
         let currentSemesterFilter = 'alle';
+        let currentFormatFilter = 'alle';
         let sortState = { column: null, direction: 'asc' };
         let editingCourseId = null;
         let searchTimeout = null;
@@ -2664,6 +2676,10 @@
                 });
             }
 
+            if (currentFormatFilter !== 'alle') {
+                filtered = filtered.filter(c => c.format === currentFormatFilter);
+            }
+
             if (currentRatingFilter !== 'alle') {
                 switch (currentRatingFilter) {
                     case '4.5': filtered = filtered.filter(c => c.rating && c.rating >= 4.5); break;
@@ -2811,6 +2827,11 @@
 
         function filterFachbereich(value) {
             currentFachbereichFilter = value;
+            renderCourses();
+        }
+
+        function filterFormat(value) {
+            currentFormatFilter = value;
             renderCourses();
         }
 
