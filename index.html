@@ -2539,18 +2539,11 @@
                     // den Recovery-Code austauscht – der Listener muss daher schon aktiv sein.
                     setupAuth();
 
-                    // Session laden – onAuthStateChange hat ggf. bereits authMode auf
-                    // 'resetPassword' gesetzt, falls ein Recovery-Token in der URL war.
-                    const { data } = await supabaseClient.auth.getSession();
-                    if (authMode !== 'resetPassword') {
-                        if (data.session?.user) {
-                            setCurrentUser(data.session.user);
-                            hideAuthGate();
-                            await refreshAppData();
-                        } else {
-                            showAuthGate();
-                        }
-                    }
+                    // getSession() aufrufen, um den PKCE-Code-Austausch zu triggern
+                    // (erforderlich wenn ein Recovery-Link geöffnet wird).
+                    // Login, Logout und Recovery werden vollständig von onAuthStateChange
+                    // gesteuert (INITIAL_SESSION / PASSWORD_RECOVERY / SIGNED_IN / SIGNED_OUT).
+                    await supabaseClient.auth.getSession();
                 }
 
         async function loadCourses() {
