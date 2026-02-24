@@ -1676,13 +1676,6 @@
                 </div>
                 <div class="filter-group" style="flex-direction:column; align-items:flex-start; gap:8px;">
                     <div class="filter-row">
-                        <span class="filter-row-label">Schwierigkeit:</span>
-                        <button class="filter-btn active" onclick="filterDifficulty('alle')" data-filter="alle">Alle</button>
-                        <button class="filter-btn" onclick="filterDifficulty('leicht')" data-filter="leicht">Leicht</button>
-                        <button class="filter-btn" onclick="filterDifficulty('mittel')" data-filter="mittel">Mittel</button>
-                        <button class="filter-btn" onclick="filterDifficulty('schwer')" data-filter="schwer">Schwer</button>
-                    </div>
-                    <div class="filter-row">
                         <span class="filter-row-label">Semester:</span>
                         <button class="filter-btn semester-filter-btn active" onclick="filterSemester('alle')" data-sem-filter="alle">Alle</button>
                         <button class="filter-btn semester-filter-btn" onclick="filterSemester('WS')" data-sem-filter="WS">WS</button>
@@ -1931,7 +1924,6 @@
         let myStudyCourses = [];
         let myStudyCourseIds = [];
         let semesters = []; // { id, name, courseIds: [] }
-        let currentFilter = 'alle';
         let currentRatingFilter = 'alle';
         let currentFachbereichFilter = 'alle';
         let currentSemesterFilter = 'alle';
@@ -2644,14 +2636,6 @@
             }
         }
 
-        function filterDifficulty(difficulty) {
-            currentFilter = difficulty;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === difficulty);
-            });
-            renderCourses();
-        }
-
         function filterRating(rating) {
             currentRatingFilter = rating;
             renderCourses();
@@ -2667,8 +2651,6 @@
         function renderCourses() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             let filtered = courses;
-
-            if (currentFilter !== 'alle') filtered = filtered.filter(c => c.difficulty === currentFilter);
 
             if (currentFachbereichFilter !== 'alle') {
                 filtered = filtered.filter(c => c.fachbereich === currentFachbereichFilter);
