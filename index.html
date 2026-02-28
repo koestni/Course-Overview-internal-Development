@@ -1951,7 +1951,13 @@
     <script>
         const SUPABASE_URL = 'https://jwwfrbodwalnygcawhmv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_eYi4vhmS-EGg9iEZAxc8Gw_jttyVG_F';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                lock: async (name, acquireTimeout, fn) => {
+                    return await fn(null);
+                }
+            }
+        });
 
         let courses = [];
         let myStudyCourses = [];
