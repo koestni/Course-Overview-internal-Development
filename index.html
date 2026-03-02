@@ -1605,6 +1605,243 @@
             white-space: nowrap;
         }
 
+        /* Kommentar-Button in der Tabelle */
+        .icon-btn.comment:hover {
+            color: var(--accent-cyan);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Comment Modal */
+        .comment-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .comment-modal.active { display: flex; }
+
+        .comment-modal-content {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.97) 0%, rgba(15, 23, 42, 0.97) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .comment-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 28px 28px 20px;
+            border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .comment-modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .comment-modal-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            max-width: 460px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .comment-close-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .comment-close-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: var(--text-primary);
+        }
+
+        .comment-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 120px;
+        }
+
+        .comment-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .comment-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .comment-item:hover { border-color: rgba(255, 255, 255, 0.15); }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .comment-author {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .comment-content {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .comment-action-btn {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .comment-action-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary);
+        }
+
+        .comment-action-btn.delete:hover {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .comment-edit-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .comment-edit-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--accent-blue);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.6;
+        }
+
+        .comment-edit-textarea:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .comment-edit-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .comment-form {
+            padding: 20px 28px;
+            border-top: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            resize: none;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .comment-input::placeholder { color: var(--text-muted); }
+
+        .comment-form-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .comment-modal-content { max-height: 92vh; border-radius: 16px; }
+            .comment-modal-header, .comment-list, .comment-form { padding-left: 18px; padding-right: 18px; }
+            .comment-modal-subtitle { max-width: 200px; }
+        }
+
     </style>
     <base target="_blank">
 </head>
@@ -1924,6 +2161,31 @@
             <div class="semester-name-actions">
                 <button class="btn-secondary" onclick="closeSemesterModal()">Abbrechen</button>
                 <button class="btn-primary" onclick="createSemester()">Anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comment Modal -->
+    <div id="commentModal" class="comment-modal">
+        <div class="comment-modal-content">
+            <div class="comment-modal-header">
+                <div>
+                    <div class="comment-modal-title">💬 Kommentare</div>
+                    <div class="comment-modal-subtitle" id="commentModalCourseName"></div>
+                </div>
+                <button class="comment-close-btn" onclick="closeCommentModal()" title="Schließen">✕</button>
+            </div>
+            <div class="comment-list" id="commentList">
+                <div class="comment-empty">
+                    <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">💬</div>
+                    <div>Noch keine Kommentare. Sei der Erste!</div>
+                </div>
+            </div>
+            <div class="comment-form">
+                <textarea class="comment-input" id="commentInput" placeholder="Schreibe einen Kommentar zu diesem Kurs..." rows="3"></textarea>
+                <div class="comment-form-actions">
+                    <button class="btn-primary" onclick="submitComment()">Kommentar absenden</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2855,6 +3117,7 @@
                             <td>
                                 <div class="actions">
                                     <button class="icon-btn add-to-study ${isInStudy ? 'added' : ''}" onclick="addToMyStudy(${course.id})" title="${isInStudy ? 'Bereits hinzugefügt' : 'Zu Mein Studium hinzufügen'}">${isInStudy ? '✓' : '🎓'}</button>
+                                    <button class="icon-btn comment" onclick="openCommentModal(${course.id})" title="Kommentare anzeigen">💬</button>
                                     ${canManage ? `<button class="icon-btn edit" onclick="openModal(${course.id})" title="Bearbeiten">✏️</button>
                                     <button class="icon-btn delete" onclick="deleteCourse(${course.id})" title="Löschen">🗑️</button>` : `<button class="icon-btn" disabled title="Nur der Ersteller oder Admin kann bearbeiten">🔒</button>`}
                                 </div>
@@ -2969,6 +3232,210 @@
             return '';
         }
 
+        // ── Kommentar-System ──
+        let currentCommentCourseId = null;
+        let comments = [];
+        let editingCommentId = null;
+
+        async function openCommentModal(courseId) {
+            currentCommentCourseId = courseId;
+            editingCommentId = null;
+            const course = courses.find(c => c.id === courseId);
+            document.getElementById('commentModalCourseName').textContent = course ? course.name : '';
+            document.getElementById('commentInput').value = '';
+            document.getElementById('commentModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            await loadComments(courseId);
+        }
+
+        function closeCommentModal() {
+            document.getElementById('commentModal').classList.remove('active');
+            document.body.style.overflow = '';
+            currentCommentCourseId = null;
+            editingCommentId = null;
+            comments = [];
+        }
+
+        async function loadComments(courseId) {
+            const list = document.getElementById('commentList');
+            list.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">Kommentare werden geladen...</div>';
+
+            const { data, error } = await supabaseClient
+                .from('course_comments')
+                .select('*')
+                .eq('course_id', courseId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--danger);">❌ Fehler beim Laden: ${escapeHtml(error.message)}</div>`;
+                return;
+            }
+
+            comments = data || [];
+            renderCommentList();
+        }
+
+        function canManageComment(comment) {
+            if (!comment || !currentUser) return false;
+            return comment.user_id === currentUser.id;
+        }
+
+        function formatCommentTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Gerade eben';
+            if (diffMins < 60) return `vor ${diffMins} Min.`;
+            if (diffHours < 24) return `vor ${diffHours} Std.`;
+            if (diffDays < 7) return `vor ${diffDays} Tag${diffDays === 1 ? '' : 'en'}`;
+            return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function renderCommentList() {
+            const list = document.getElementById('commentList');
+
+            if (comments.length === 0) {
+                list.innerHTML = `
+                    <div class="comment-empty">
+                        <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">💬</div>
+                        <div>Noch keine Kommentare. Sei der Erste!</div>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = comments.map(comment => {
+                const canManage = canManageComment(comment);
+                const isEditing = editingCommentId === comment.id;
+                const wasEdited = comment.updated_at && comment.updated_at !== comment.created_at;
+
+                return `
+                    <div class="comment-item" id="comment-${comment.id}">
+                        <div class="comment-header">
+                            <span class="comment-author">${escapeHtml(comment.user_email)}</span>
+                            <span class="comment-time">${formatCommentTime(comment.created_at)}${wasEdited ? ' · bearbeitet' : ''}</span>
+                        </div>
+                        ${isEditing ? `
+                            <div class="comment-edit-area">
+                                <textarea class="comment-edit-textarea" id="editTextarea-${comment.id}">${escapeHtml(comment.content)}</textarea>
+                                <div class="comment-edit-actions">
+                                    <button class="btn-secondary" style="padding:8px 16px; font-size:13px;" onclick="cancelEditComment()">Abbrechen</button>
+                                    <button class="btn-primary" style="padding:8px 16px; font-size:13px;" onclick="saveEditComment('${comment.id}')">Speichern</button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="comment-content">${escapeHtml(comment.content)}</div>
+                        `}
+                        ${canManage && !isEditing ? `
+                            <div class="comment-actions">
+                                <button class="comment-action-btn" onclick="startEditComment('${comment.id}')">✏️ Bearbeiten</button>
+                                <button class="comment-action-btn delete" onclick="deleteComment('${comment.id}')">🗑️ Löschen</button>
+                            </div>
+                        ` : ''}
+                    </div>`;
+            }).join('');
+
+            // Ans Ende scrollen nach Rendern
+            list.scrollTop = list.scrollHeight;
+        }
+
+        async function submitComment() {
+            if (!currentUser || !currentCommentCourseId) return;
+            const input = document.getElementById('commentInput');
+            const content = input.value.trim();
+            if (!content) {
+                showToast('⚠️ Bitte schreibe zuerst einen Kommentar.', 'error');
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('course_comments')
+                .insert([{
+                    course_id: currentCommentCourseId,
+                    user_id: currentUser.id,
+                    user_email: currentUser.email,
+                    content: content
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                showToast('❌ Fehler: ' + error.message, 'error');
+                return;
+            }
+
+            comments.push(data);
+            input.value = '';
+            renderCommentList();
+        }
+
+        function startEditComment(commentId) {
+            editingCommentId = commentId;
+            renderCommentList();
+            const ta = document.getElementById(`editTextarea-${commentId}`);
+            if (ta) {
+                ta.focus();
+                ta.selectionStart = ta.selectionEnd = ta.value.length;
+            }
+        }
+
+        function cancelEditComment() {
+            editingCommentId = null;
+            renderCommentList();
+        }
+
+        async function saveEditComment(commentId) {
+            const ta = document.getElementById(`editTextarea-${commentId}`);
+            if (!ta) return;
+            const content = ta.value.trim();
+            if (!content) {
+                showToast('⚠️ Kommentar darf nicht leer sein.', 'error');
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('course_comments')
+                .update({ content: content, updated_at: new Date().toISOString() })
+                .eq('id', commentId)
+                .eq('user_id', currentUser.id)
+                .select()
+                .single();
+
+            if (error) {
+                showToast('❌ Fehler: ' + error.message, 'error');
+                return;
+            }
+
+            const idx = comments.findIndex(c => c.id === commentId);
+            if (idx !== -1) comments[idx] = data;
+            editingCommentId = null;
+            renderCommentList();
+            showToast('✅ Kommentar aktualisiert!');
+        }
+
+        async function deleteComment(commentId) {
+            const ok = await showConfirm('Möchtest du diesen Kommentar wirklich löschen?', 'Kommentar löschen');
+            if (!ok) return;
+
+            const { error } = await supabaseClient
+                .from('course_comments')
+                .delete()
+                .eq('id', commentId)
+                .eq('user_id', currentUser.id);
+
+            if (error) {
+                showToast('❌ Fehler: ' + error.message, 'error');
+                return;
+            }
+
+            comments = comments.filter(c => c.id !== commentId);
+            renderCommentList();
+            showToast('🗑️ Kommentar gelöscht.');
+        }
+
         // Modal close handlers
         document.getElementById('courseModal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
@@ -2977,10 +3444,16 @@
             if (e.target === this) closeSemesterModal();
         });
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') { closeModal(); closeSemesterModal(); }
+            if (e.key === 'Escape') { closeModal(); closeSemesterModal(); closeCommentModal(); }
         });
         document.getElementById('semesterNameInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); createSemester(); }
+        });
+        document.getElementById('commentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCommentModal();
+        });
+        document.getElementById('commentInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitComment(); }
         });
 
         init();
@@ -2988,6 +3461,18 @@
         supabaseClient
             .channel('courses')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, async () => { if (currentUser) await loadCourses(); })
+            .subscribe();
+
+        supabaseClient
+            .channel('course_comments')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'course_comments' }, async (payload) => {
+                if (!currentUser || !currentCommentCourseId) return;
+                // Nur neu laden wenn das Modal offen ist und der Kurs passt
+                const changedCourseId = payload.new?.course_id || payload.old?.course_id;
+                if (changedCourseId && String(changedCourseId) === String(currentCommentCourseId)) {
+                    await loadComments(currentCommentCourseId);
+                }
+            })
             .subscribe();
     </script>
 </body>
