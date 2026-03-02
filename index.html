@@ -2700,15 +2700,12 @@
 
         async function refreshAppData() {
             await loadAdminStatus();
-            if (!currentUser) return;
             await loadCourses();
-            if (!currentUser) return;
             try {
                 await loadMyStudy();
             } catch (err) {
                 console.error('Fehler beim Laden von Mein Studium:', err);
             }
-            if (!currentUser) return;
             renderCourses();
             renderMyStudy();
         }
@@ -2845,11 +2842,9 @@
                     await supabaseClient.auth.getSession();
                 }
 
-        // silent = true → kein Overlay, kein Toast bei Fehler (für Hintergrund-Refreshes)
+        // silent = true → kein Lade-Overlay und kein Toast (für Hintergrund-Refreshes via Realtime)
         async function loadCourses(silent = false) {
-            if (isFetchingCourses) return; // Verhindert parallele Aufrufe
             if (!currentUser) return;
-            isFetchingCourses = true;
             const overlay = document.getElementById('loadingOverlay');
             try {
                 if (!silent) overlay.style.display = 'flex';
@@ -2858,7 +2853,6 @@
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (!currentUser) return; // Logout während des Fetches
                 if (error) throw error;
                 courses = data || [];
                 syncMyStudyCoursesFromIds();
@@ -2869,7 +2863,6 @@
                 console.error('Fehler in loadCourses:', err);
                 if (!silent) showToast('❌ Fehler beim Laden der Kurse', 'error');
             } finally {
-                isFetchingCourses = false;
                 if (!silent) overlay.style.display = 'none';
             }
         }
@@ -3273,7 +3266,6 @@
         let currentCommentCourseId = null;
         let comments = [];
         let editingCommentId = null;
-        let isFetchingCourses = false;
         let realtimeReloadTimer = null;
 
         async function openCommentModal(courseId) {
