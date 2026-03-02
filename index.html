@@ -2698,20 +2698,42 @@
             }
         }
 
-               async function refreshAppData() {
+        async function refreshAppData() {
             await loadAdminStatus();
+            if (!currentUser) return;
             await loadCourses();
+            if (!currentUser) return;
             try {
                 await loadMyStudy();
             } catch (err) {
                 console.error('Fehler beim Laden von Mein Studium:', err);
             }
+            if (!currentUser) return;
             renderCourses();
             renderMyStudy();
         }
 
         async function logout() {
-            await supabaseClient.auth.signOut();
+            // UI sofort zurücksetzen – unabhängig davon, ob signOut() gelingt
+            isAdmin = false;
+            setCurrentUser(null);
+            courses = [];
+            myStudyCourses = [];
+            myStudyCourseIds = [];
+            semesters = [];
+            closeCommentModal();
+            closeModal();
+            closeSemesterModal();
+            showAuthGate();
+            renderCourses();
+            renderMyStudy();
+
+            // Danach serverseitig ausloggen
+            try {
+                await supabaseClient.auth.signOut();
+            } catch (err) {
+                console.warn('SignOut-Fehler (lokale Session wurde trotzdem gelöscht):', err.message);
+            }
         }
              
         function setupAuth() {
@@ -2774,17 +2796,26 @@
                 if (event === 'INITIAL_SESSION' && authMode === 'resetPassword') {
                     return;
                 }
+                // TOKEN_REFRESHED: nur den User-State aktualisieren, keine neue Daten-Ladung.
+                // Würde sonst stündlich den Loading-Spinner auslösen und alle Daten neu laden.
+                if (event === 'TOKEN_REFRESHED') {
+                    if (session?.user) setCurrentUser(session.user);
+                    return;
+                }
                 if (session?.user) {
                     setCurrentUser(session.user);
                     hideAuthGate();
                     await refreshAppData();
                 } else {
-                    isAdmin = false;
-                    setCurrentUser(null);
-                    courses = [];
-                    myStudyCourses = [];
-                    myStudyCourseIds = [];
-                    semesters = [];
+                    // SIGNED_OUT – nur wenn die UI nicht schon von logout() zurückgesetzt wurde
+                    if (currentUser !== null) {
+                        isAdmin = false;
+                        setCurrentUser(null);
+                        courses = [];
+                        myStudyCourses = [];
+                        myStudyCourseIds = [];
+                        semesters = [];
+                    }
                     showAuthGate();
                     renderCourses();
                     renderMyStudy();
@@ -2814,26 +2845,32 @@
                     await supabaseClient.auth.getSession();
                 }
 
-        async function loadCourses() {
+        // silent = true → kein Overlay, kein Toast bei Fehler (für Hintergrund-Refreshes)
+        async function loadCourses(silent = false) {
+            if (isFetchingCourses) return; // Verhindert parallele Aufrufe
+            if (!currentUser) return;
+            isFetchingCourses = true;
             const overlay = document.getElementById('loadingOverlay');
             try {
-                overlay.style.display = 'flex';
+                if (!silent) overlay.style.display = 'flex';
                 const { data, error } = await supabaseClient
                     .from('courses')
                     .select('*')
                     .order('created_at', { ascending: false });
 
+                if (!currentUser) return; // Logout während des Fetches
                 if (error) throw error;
                 courses = data || [];
                 syncMyStudyCoursesFromIds();
                 updateFachbereichDropdown();
                 renderCourses();
                 renderTopCourses();
-            } catch (error) {
-                console.error('Fehler in loadCourses:', error);
-                showToast('❌ Fehler beim Laden der Kurse', 'error');
+            } catch (err) {
+                console.error('Fehler in loadCourses:', err);
+                if (!silent) showToast('❌ Fehler beim Laden der Kurse', 'error');
             } finally {
-                overlay.style.display = 'none';
+                isFetchingCourses = false;
+                if (!silent) overlay.style.display = 'none';
             }
         }
 
@@ -3236,6 +3273,8 @@
         let currentCommentCourseId = null;
         let comments = [];
         let editingCommentId = null;
+        let isFetchingCourses = false;
+        let realtimeReloadTimer = null;
 
         async function openCommentModal(courseId) {
             currentCommentCourseId = courseId;
@@ -3460,7 +3499,12 @@
 
         supabaseClient
             .channel('courses')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, async () => { if (currentUser) await loadCourses(); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, () => {
+                if (!currentUser) return;
+                // Debounce: mehrere schnelle Änderungen zu einem einzigen Reload zusammenfassen
+                clearTimeout(realtimeReloadTimer);
+                realtimeReloadTimer = setTimeout(() => loadCourses(true), 600);
+            })
             .subscribe();
 
         supabaseClient
