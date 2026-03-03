@@ -1863,6 +1863,10 @@
                     <label class="form-label" id="passwordLabel">Passwort</label>
                     <input class="form-input" type="password" id="authPassword" minlength="6" required placeholder="Mindestens 6 Zeichen">
                 </div>
+                <div class="form-group" id="usernameGroup" style="display:none;">
+                    <label class="form-label">Anzeigename *</label>
+                    <input class="form-input" type="text" id="authUsername" minlength="2" maxlength="50" placeholder="z.B. Max Mustermann">
+                </div>
                 <div class="form-group" id="confirmPasswordGroup" style="display:none;">
                     <label class="form-label">Passwort bestätigen</label>
                     <input class="form-input" type="password" id="authConfirmPassword" minlength="6" placeholder="Passwort wiederholen">
@@ -2236,6 +2240,7 @@
         let authMode = 'login';
         let currentUser = null;
         let isAdmin = false;
+        let userProfiles = {}; // { userId: username }
 
         function setAuthMessage(message, isError = false) {
             const msg = document.getElementById('authMessage');
@@ -2261,6 +2266,8 @@
             // Reset common state
             emailGroup.style.display = '';
             confirmPasswordGroup.style.display = 'none';
+            document.getElementById('usernameGroup').style.display = 'none';
+            document.getElementById('authUsername').required = false;
             forgotPasswordLink.style.display = 'none';
             backToLoginLink.style.display = 'none';
             authTabs.style.display = 'flex';
@@ -2281,6 +2288,8 @@
                 registerTab.classList.add('active');
                 passwordGroup.style.display = '';
                 passwordInput.required = true;
+                document.getElementById('usernameGroup').style.display = '';
+                document.getElementById('authUsername').required = true;
                 document.getElementById('authSubmitBtn').textContent = 'Konto erstellen';
             } else if (mode === 'forgotPassword') {
                 loginTab.classList.remove('active');
@@ -2323,9 +2332,8 @@
             currentUser = user;
             const badge = document.getElementById('userEmailBadge');
             const roleLabel = isAdmin ? ' (Admin)' : '';
-            badge.textContent = user?.email ? `${user.email}${roleLabel}` : 'Nicht angemeldet';
-            const createdByInput = document.getElementById('createdBy');
-            if (user?.email && !createdByInput.value) createdByInput.value = user.email;
+            const displayName = (user?.id && userProfiles[user.id]) || user?.email;
+            badge.textContent = displayName ? `${displayName}${roleLabel}` : 'Nicht angemeldet';
         }
 
         async function loadAdminStatus() {
@@ -2698,9 +2706,19 @@
             }
         }
 
+        async function loadUserProfiles() {
+            const { data } = await supabaseClient.from('user_profiles').select('id, username');
+            if (data) {
+                userProfiles = {};
+                data.forEach(p => { userProfiles[p.id] = p.username; });
+            }
+        }
+
         async function refreshAppData() {
             await loadAdminStatus();
             await loadCourses();
+            await loadUserProfiles();
+            if (currentUser) setCurrentUser(currentUser);
             try {
                 await loadMyStudy();
             } catch (err) {
@@ -2765,13 +2783,16 @@
                     msg.classList.remove('error');
                     msg.classList.add('success');
                 } else {
+                    const username = document.getElementById('authUsername').value.trim();
+                    if (!username) return setAuthMessage('Bitte gib einen Anzeigenamen ein.', true);
                     const EMAIL_REDIRECT_TO = "https://course-overview-iota.vercel.app/";
 
                     const { error } = await supabaseClient.auth.signUp({
                         email,
                         password,
                         options: {
-                            emailRedirectTo: EMAIL_REDIRECT_TO
+                            emailRedirectTo: EMAIL_REDIRECT_TO,
+                            data: { username: username }
                         }
                     });
 
@@ -2961,6 +2982,7 @@
                 submitBtn.textContent = 'Änderungen speichern';
                 document.getElementById('editCourseId').value = courseId;
                 document.getElementById('createdBy').value = course.created_by || '';
+                document.getElementById('createdBy').readOnly = false;
                 document.getElementById('courseName').value = course.name;
                 document.getElementById('courseFachbereich').value = course.fachbereich || '';
                 document.getElementById('courseECTS').value = course.ects;
@@ -2977,6 +2999,9 @@
                 submitBtn.textContent = 'Kurs hinzufügen';
                 document.getElementById('courseForm').reset();
                 document.getElementById('editCourseId').value = '';
+                const createdByField = document.getElementById('createdBy');
+                createdByField.value = (currentUser?.id && userProfiles[currentUser.id]) || currentUser?.email || '';
+                createdByField.readOnly = true;
             }
 
             modal.classList.add('active');
@@ -3346,7 +3371,7 @@
                 return `
                     <div class="comment-item" id="comment-${comment.id}">
                         <div class="comment-header">
-                            <span class="comment-author">${escapeHtml(comment.user_email)}</span>
+                            <span class="comment-author">${escapeHtml(userProfiles[comment.user_id] || comment.user_email)}</span>
                             <span class="comment-time">${formatCommentTime(comment.created_at)}${wasEdited ? ' · bearbeitet' : ''}</span>
                         </div>
                         ${isEditing ? `
