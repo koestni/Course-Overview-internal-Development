@@ -2241,6 +2241,7 @@
         let currentUser = null;
         let isAdmin = false;
         let userProfiles = {}; // { userId: username }
+        let appDataLoaded = false;
 
         function setAuthMessage(message, isError = false) {
             const msg = document.getElementById('authMessage');
@@ -2717,7 +2718,11 @@
         async function refreshAppData() {
             await loadAdminStatus();
             await loadCourses();
-            await loadUserProfiles();
+            try {
+                await loadUserProfiles();
+            } catch (err) {
+                console.warn('Fehler beim Laden der Nutzerprofile:', err);
+            }
             if (currentUser) setCurrentUser(currentUser);
             try {
                 await loadMyStudy();
@@ -2726,11 +2731,13 @@
             }
             renderCourses();
             renderMyStudy();
+            appDataLoaded = true;
         }
 
         async function logout() {
             // UI sofort zurücksetzen – unabhängig davon, ob signOut() gelingt
             isAdmin = false;
+            appDataLoaded = false;
             setCurrentUser(null);
             courses = [];
             myStudyCourses = [];
@@ -2814,10 +2821,15 @@
                 if (event === 'INITIAL_SESSION' && authMode === 'resetPassword') {
                     return;
                 }
-                // TOKEN_REFRESHED: nur den User-State aktualisieren, keine neue Daten-Ladung.
-                // Würde sonst stündlich den Loading-Spinner auslösen und alle Daten neu laden.
+                // TOKEN_REFRESHED: User-State aktualisieren.
+                // Daten nur nachladen wenn sie beim Reload noch nicht geladen wurden
+                // (z.B. wenn INITIAL_SESSION mit abgelaufenem Token kam).
+                // Kein Reload wenn Daten bereits vorhanden, um stündlichen Spinner zu vermeiden.
                 if (event === 'TOKEN_REFRESHED') {
-                    if (session?.user) setCurrentUser(session.user);
+                    if (session?.user) {
+                        setCurrentUser(session.user);
+                        if (!appDataLoaded) await refreshAppData();
+                    }
                     return;
                 }
                 if (session?.user) {
