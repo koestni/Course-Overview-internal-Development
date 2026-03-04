@@ -2868,11 +2868,24 @@
                     // den Recovery-Code austauscht – der Listener muss daher schon aktiv sein.
                     setupAuth();
 
-                    // getSession() aufrufen, um den PKCE-Code-Austausch zu triggern
-                    // (erforderlich wenn ein Recovery-Link geöffnet wird).
-                    // Login, Logout und Recovery werden vollständig von onAuthStateChange
-                    // gesteuert (INITIAL_SESSION / PASSWORD_RECOVERY / SIGNED_IN / SIGNED_OUT).
-                    await supabaseClient.auth.getSession();
+                    // getSession() triggert den PKCE-Code-Austausch (für Recovery-Links)
+                    // und liefert die aktuelle Session zurück.
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+
+                    // Fallback: Falls INITIAL_SESSION die Kurse noch nicht geladen hat
+                    // (Race Condition beim Seitenstart – INITIAL_SESSION kann mit null
+                    // feuern, bevor die Session aus localStorage wiederhergestellt wurde),
+                    // hier explizit laden. currentUser-Check verhindert Doppel-Laden,
+                    // wenn INITIAL_SESSION bereits korrekt ausgeführt wurde.
+                    if (session?.user && !currentUser && authMode !== 'resetPassword') {
+                        setCurrentUser(session.user);
+                        hideAuthGate();
+                        await refreshAppData();
+                    } else if (!session?.user && !currentUser && authMode !== 'resetPassword') {
+                        showAuthGate();
+                        renderCourses();
+                        renderMyStudy();
+                    }
                 }
 
         // silent = true → kein Lade-Overlay und kein Toast (für Hintergrund-Refreshes via Realtime)
