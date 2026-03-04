@@ -2814,11 +2814,11 @@
                     showAuthGate();
                     return;
                 }
-                // INITIAL_SESSION nur im Recovery-Flow überspringen:
-                // PASSWORD_RECOVERY feuert zuerst (setzt authMode auf 'resetPassword'),
-                // danach feuert INITIAL_SESSION – ohne diese Prüfung würde der User
-                // automatisch eingeloggt, obwohl er sein Passwort noch ändern soll.
-                if (event === 'INITIAL_SESSION' && authMode === 'resetPassword') {
+                // INITIAL_SESSION wird komplett ignoriert – init() übernimmt den initialen
+                // Load via getSession(). Das vermeidet die Race Condition, bei der
+                // INITIAL_SESSION mit null feuert bevor die Session aus localStorage
+                // wiederhergestellt ist, sowie Timing-Probleme zwischen Event und getSession().
+                if (event === 'INITIAL_SESSION') {
                     return;
                 }
                 // TOKEN_REFRESHED: User-State aktualisieren.
@@ -2868,20 +2868,21 @@
                     // den Recovery-Code austauscht – der Listener muss daher schon aktiv sein.
                     setupAuth();
 
-                    // getSession() triggert den PKCE-Code-Austausch (für Recovery-Links)
-                    // und liefert die aktuelle Session zurück.
+                    // getSession() ist die einzige, zuverlässige Quelle für den initialen
+                    // Auth-Status beim Seitenstart. INITIAL_SESSION wird im Handler ignoriert,
+                    // da es in einem Race-Condition-Fenster mit null feuern kann.
                     const { data: { session } } = await supabaseClient.auth.getSession();
 
-                    // Fallback: Falls INITIAL_SESSION die Kurse noch nicht geladen hat
-                    // (Race Condition beim Seitenstart – INITIAL_SESSION kann mit null
-                    // feuern, bevor die Session aus localStorage wiederhergestellt wurde),
-                    // hier explizit laden. currentUser-Check verhindert Doppel-Laden,
-                    // wenn INITIAL_SESSION bereits korrekt ausgeführt wurde.
-                    if (session?.user && !currentUser && authMode !== 'resetPassword') {
+                    if (authMode === 'resetPassword') {
+                        // Passwort-Reset-Flow: Auth-Gate bleibt geöffnet (bereits von
+                        // PASSWORD_RECOVERY-Handler gesetzt), kein App-Load.
+                        return;
+                    }
+                    if (session?.user) {
                         setCurrentUser(session.user);
                         hideAuthGate();
                         await refreshAppData();
-                    } else if (!session?.user && !currentUser && authMode !== 'resetPassword') {
+                    } else {
                         showAuthGate();
                         renderCourses();
                         renderMyStudy();
