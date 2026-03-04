@@ -1863,6 +1863,10 @@
                     <label class="form-label" id="passwordLabel">Passwort</label>
                     <input class="form-input" type="password" id="authPassword" minlength="6" required placeholder="Mindestens 6 Zeichen">
                 </div>
+                <div class="form-group" id="usernameGroup" style="display:none;">
+                    <label class="form-label">Anzeigename *</label>
+                    <input class="form-input" type="text" id="authUsername" minlength="2" maxlength="50" placeholder="z.B. Max Mustermann">
+                </div>
                 <div class="form-group" id="confirmPasswordGroup" style="display:none;">
                     <label class="form-label">Passwort bestätigen</label>
                     <input class="form-input" type="password" id="authConfirmPassword" minlength="6" placeholder="Passwort wiederholen">
@@ -2236,6 +2240,7 @@
         let authMode = 'login';
         let currentUser = null;
         let isAdmin = false;
+        let userProfiles = {}; // { userId: username }
 
         function setAuthMessage(message, isError = false) {
             const msg = document.getElementById('authMessage');
@@ -2261,6 +2266,8 @@
             // Reset common state
             emailGroup.style.display = '';
             confirmPasswordGroup.style.display = 'none';
+            document.getElementById('usernameGroup').style.display = 'none';
+            document.getElementById('authUsername').required = false;
             forgotPasswordLink.style.display = 'none';
             backToLoginLink.style.display = 'none';
             authTabs.style.display = 'flex';
@@ -2281,6 +2288,8 @@
                 registerTab.classList.add('active');
                 passwordGroup.style.display = '';
                 passwordInput.required = true;
+                document.getElementById('usernameGroup').style.display = '';
+                document.getElementById('authUsername').required = true;
                 document.getElementById('authSubmitBtn').textContent = 'Konto erstellen';
             } else if (mode === 'forgotPassword') {
                 loginTab.classList.remove('active');
@@ -2323,9 +2332,8 @@
             currentUser = user;
             const badge = document.getElementById('userEmailBadge');
             const roleLabel = isAdmin ? ' (Admin)' : '';
-            badge.textContent = user?.email ? `${user.email}${roleLabel}` : 'Nicht angemeldet';
-            const createdByInput = document.getElementById('createdBy');
-            if (user?.email && !createdByInput.value) createdByInput.value = user.email;
+            const displayName = (user?.id && userProfiles[user.id]) || user?.email;
+            badge.textContent = displayName ? `${displayName}${roleLabel}` : 'Nicht angemeldet';
         }
 
         async function loadAdminStatus() {
@@ -2698,9 +2706,23 @@
             }
         }
 
+        async function loadUserProfiles() {
+            const { data } = await supabaseClient.from('user_profiles').select('id, username');
+            if (data) {
+                userProfiles = {};
+                data.forEach(p => { userProfiles[p.id] = p.username; });
+            }
+        }
+
         async function refreshAppData() {
             await loadAdminStatus();
             await loadCourses();
+            try {
+                await loadUserProfiles();
+            } catch (err) {
+                console.warn('Fehler beim Laden der Nutzerprofile:', err);
+            }
+            if (currentUser) setCurrentUser(currentUser);
             try {
                 await loadMyStudy();
             } catch (err) {
@@ -2765,13 +2787,16 @@
                     msg.classList.remove('error');
                     msg.classList.add('success');
                 } else {
+                    const username = document.getElementById('authUsername').value.trim();
+                    if (!username) return setAuthMessage('Bitte gib einen Anzeigenamen ein.', true);
                     const EMAIL_REDIRECT_TO = "https://course-overview-iota.vercel.app/";
 
                     const { error } = await supabaseClient.auth.signUp({
                         email,
                         password,
                         options: {
-                            emailRedirectTo: EMAIL_REDIRECT_TO
+                            emailRedirectTo: EMAIL_REDIRECT_TO,
+                            data: { username: username }
                         }
                     });
 
@@ -2786,15 +2811,15 @@
                     showAuthGate();
                     return;
                 }
-                // INITIAL_SESSION nur im Recovery-Flow überspringen:
-                // PASSWORD_RECOVERY feuert zuerst (setzt authMode auf 'resetPassword'),
-                // danach feuert INITIAL_SESSION – ohne diese Prüfung würde der User
-                // automatisch eingeloggt, obwohl er sein Passwort noch ändern soll.
-                if (event === 'INITIAL_SESSION' && authMode === 'resetPassword') {
+                // INITIAL_SESSION wird komplett ignoriert – init() übernimmt den initialen
+                // Load via getSession(). Das vermeidet die Race Condition, bei der
+                // INITIAL_SESSION mit null feuert bevor die Session aus localStorage
+                // wiederhergestellt ist, sowie Timing-Probleme zwischen Event und getSession().
+                if (event === 'INITIAL_SESSION') {
                     return;
                 }
-                // TOKEN_REFRESHED: nur den User-State aktualisieren, keine neue Daten-Ladung.
-                // Würde sonst stündlich den Loading-Spinner auslösen und alle Daten neu laden.
+                // TOKEN_REFRESHED: nur den User-State aktualisieren, kein Datennachladen.
+                // Stündliche Token-Refreshes sollen keinen Reload auslösen.
                 if (event === 'TOKEN_REFRESHED') {
                     if (session?.user) setCurrentUser(session.user);
                     return;
@@ -2835,20 +2860,21 @@
                     // den Recovery-Code austauscht – der Listener muss daher schon aktiv sein.
                     setupAuth();
 
-                    // getSession() triggert den PKCE-Code-Austausch (für Recovery-Links)
-                    // und liefert die aktuelle Session zurück.
+                    // getSession() ist die einzige, zuverlässige Quelle für den initialen
+                    // Auth-Status beim Seitenstart. INITIAL_SESSION wird im Handler ignoriert,
+                    // da es in einem Race-Condition-Fenster mit null feuern kann.
                     const { data: { session } } = await supabaseClient.auth.getSession();
 
-                    // Fallback: Falls INITIAL_SESSION die Kurse noch nicht geladen hat
-                    // (Race Condition beim Seitenstart – INITIAL_SESSION kann mit null
-                    // feuern, bevor die Session aus localStorage wiederhergestellt wurde),
-                    // hier explizit laden. currentUser-Check verhindert Doppel-Laden,
-                    // wenn INITIAL_SESSION bereits korrekt ausgeführt wurde.
-                    if (session?.user && !currentUser && authMode !== 'resetPassword') {
+                    if (authMode === 'resetPassword') {
+                        // Passwort-Reset-Flow: Auth-Gate bleibt geöffnet (bereits von
+                        // PASSWORD_RECOVERY-Handler gesetzt), kein App-Load.
+                        return;
+                    }
+                    if (session?.user) {
                         setCurrentUser(session.user);
                         hideAuthGate();
                         await refreshAppData();
-                    } else if (!session?.user && !currentUser && authMode !== 'resetPassword') {
+                    } else {
                         showAuthGate();
                         renderCourses();
                         renderMyStudy();
@@ -2974,6 +3000,7 @@
                 submitBtn.textContent = 'Änderungen speichern';
                 document.getElementById('editCourseId').value = courseId;
                 document.getElementById('createdBy').value = course.created_by || '';
+                document.getElementById('createdBy').readOnly = false;
                 document.getElementById('courseName').value = course.name;
                 document.getElementById('courseFachbereich').value = course.fachbereich || '';
                 document.getElementById('courseECTS').value = course.ects;
@@ -2990,6 +3017,9 @@
                 submitBtn.textContent = 'Kurs hinzufügen';
                 document.getElementById('courseForm').reset();
                 document.getElementById('editCourseId').value = '';
+                const createdByField = document.getElementById('createdBy');
+                createdByField.value = (currentUser?.id && userProfiles[currentUser.id]) || currentUser?.email || '';
+                createdByField.readOnly = true;
             }
 
             modal.classList.add('active');
@@ -3359,7 +3389,7 @@
                 return `
                     <div class="comment-item" id="comment-${comment.id}">
                         <div class="comment-header">
-                            <span class="comment-author">${escapeHtml(comment.user_email)}</span>
+                            <span class="comment-author">${escapeHtml(userProfiles[comment.user_id] || comment.user_email)}</span>
                             <span class="comment-time">${formatCommentTime(comment.created_at)}${wasEdited ? ' · bearbeitet' : ''}</span>
                         </div>
                         ${isEditing ? `
